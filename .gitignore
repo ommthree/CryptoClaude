@@ -1,0 +1,90 @@
+# Build outputs
+x64/
+Debug/
+Release/
+bin/
+obj/
+*.exe
+*.o
+*.obj
+*.lib
+*.dll
+*.pdb
+*.ilk
+*.idb
+*.exp
+
+# Visual Studio
+.vs/
+*.vcxproj.user
+*.vcxproj.filters.user
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# External dependencies (if managed by package manager)
+external/
+
+# Cache directories
+.cache/
+.claude/
+
+# Backup files
+*.backup
+*.bak
+
+# OS specific
+.Trash/
+.Spotlight-V100/
+.fseventsd/
+
+# Node modules (if using npm for any tooling)
+node_modules/
+
+# Python cache (if using Python scripts)
+__pycache__/
+*.pyc
+*.pyo
+
+# Test output
+test_results/
+coverage/
+
+# Documentation builds
+docs/_build/
+
+# Configuration files with secrets (keep templates)
+config.json
+secrets.conf
+*.key
+*.pem
+
+# Keep templates and examples
+!config.template.json
+!example.conf
