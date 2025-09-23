@@ -1,579 +1,310 @@
-# Week 2 Strategic Plan: Risk-Aware Portfolio Models 🎯
+# 🎯 Week 2 Strategic Plan: Risk-Aware Portfolio Models
 
-**Period**: Days 6-10
-**Objective**: Enhanced Portfolio Models with Advanced Risk Management
-**Foundation**: Week 1 Complete (Production-Ready Repository Layer)
-**Status**: READY TO BEGIN
-
----
-
-## 🏆 **Week 1 Foundation Assessment**
-
-### **Available Assets for Week 2**
-- ✅ **Production Database**: 10 tables with optimal performance (5x targets)
-- ✅ **Repository Layer**: Complete CRUD with transaction management
-- ✅ **Risk Framework**: Multi-level leverage and margin foundations
-- ✅ **Integration Points**: Cross-repository analytics working
-- ✅ **Testing Framework**: >95% coverage with edge case validation
-
-### **Performance Headroom**
-- **Database Operations**: 5x performance buffer available
-- **Memory Usage**: <200MB (300MB headroom to targets)
-- **Architecture**: Repository pattern designed for extension
-- **Development Velocity**: 125% efficiency established
+**Planning Date**: January 23, 2025
+**Execution Period**: Days 6-10 (January 24-28, 2025)
+**Foundation**: Week 1 Complete (Database & Repository Layer)
 
 ---
 
-## 🎯 **Week 2 Objectives & Success Criteria**
+## 🎯 Week 2 Objectives
 
-### **Primary Objective**
-Transform the solid Week 1 foundation into a **risk-aware portfolio management system** capable of sophisticated position sizing, correlation analysis, and advanced risk metrics.
+### **Primary Goal**: Enhanced Portfolio Intelligence
+Build upon the solid Week 1 foundation to create sophisticated risk-aware portfolio modeling capabilities that leverage the existing database and repository infrastructure.
 
-### **Success Criteria**
-1. ✅ **VaR Calculations**: Value-at-Risk implementation with 95% and 99% confidence
-2. ✅ **Advanced Risk Metrics**: CVaR, maximum drawdown, correlation matrix
-3. ✅ **Dynamic Position Sizing**: Risk-adjusted position allocation algorithms
-4. ✅ **Portfolio Optimization**: Efficient frontier and risk-parity approaches
-5. ✅ **Real-Time Risk Monitor**: Live risk dashboard with alert system
-6. ✅ **Integration Testing**: Seamless operation with Week 1 repository layer
+### **Strategic Focus Areas**:
+1. **Advanced Risk Analytics**: Multi-dimensional risk assessment and monitoring
+2. **Portfolio Optimization**: Dynamic allocation and rebalancing algorithms
+3. **Performance Attribution**: Detailed analysis of trading performance drivers
+4. **Predictive Risk Modeling**: Forward-looking risk scenario analysis
 
 ---
 
-## 📋 **Daily Implementation Plan**
+## 📋 Week 2 Daily Implementation Plan
 
-### **Day 6: Advanced Portfolio Models Foundation**
-**Duration**: 6-8 hours
-**Focus**: Extend existing Portfolio/Position models with advanced risk capabilities
+### **Day 6: Enhanced Portfolio Risk Analytics**
+**Objective**: Extend existing Portfolio and Position models with advanced risk calculations
 
-#### **Phase 6.1: Enhanced Data Models (3-4 hours)**
+**Tasks (4-5 hours)**:
 
-**Tasks**:
-1. **Portfolio Model Extensions** (90 minutes)
-   ```cpp
-   // Add to existing Portfolio class
-   class Portfolio {
-   private:
-       // Week 2 additions
-       double portfolioVar95_;
-       double portfolioVar99_;
-       double expectedShortfall_;
-       double maxDrawdown_;
-       double correlationRisk_;
-       std::vector<double> riskContribution_;
+1. **Advanced Risk Metrics Implementation** (2-3 hours)
+   - Extend Portfolio model with VaR calculation methods
+   - Add correlation analysis between positions
+   - Implement expected shortfall calculations
+   - Add portfolio concentration risk metrics
 
-   public:
-       // New risk calculation methods
-       void calculatePortfolioVaR(double confidence = 0.95);
-       double getExpectedShortfall() const;
-       double getMaxDrawdown() const;
-       std::vector<double> getRiskContribution() const;
-   };
-   ```
+2. **Position Risk Enhancement** (1-2 hours)
+   - Extend Position model with Greeks-like risk sensitivities
+   - Add position correlation tracking
+   - Implement individual position VaR
+   - Add time-decay risk analysis for positions
 
-2. **Position Model Enhancements** (90 minutes)
-   ```cpp
-   // Enhanced Position class
-   class Position {
-   private:
-       // Risk metrics
-       double positionVar_;
-       double beta_;
-       double trackingError_;
-       double riskContribution_;
+3. **Risk Reporting Framework** (1 hour)
+   - Create risk reporting structures
+   - Add risk event logging
+   - Implement risk threshold monitoring
+   - Update repository queries for risk data
 
-   public:
-       // Risk calculation methods
-       double calculatePositionVaR(const std::vector<double>& returns);
-       double getBeta() const;
-       double getTrackingError() const;
-   };
-   ```
+**Deliverables**:
+- Enhanced Portfolio class with 10+ new risk methods
+- Enhanced Position class with risk sensitivity tracking
+- Risk reporting data structures
+- Updated repository methods for risk queries
 
-3. **New Risk Metrics Models** (60 minutes)
-   ```cpp
-   // New RiskMetrics utility class
-   class RiskMetrics {
-   public:
-       static double calculateVaR(const std::vector<double>& returns, double confidence);
-       static double calculateCVaR(const std::vector<double>& returns, double confidence);
-       static std::vector<std::vector<double>> calculateCorrelationMatrix(
-           const std::map<std::string, std::vector<double>>& assetReturns);
-       static double calculateMaxDrawdown(const std::vector<double>& values);
-   };
-   ```
-
-#### **Phase 6.2: Database Schema Extensions (2-3 hours)**
-
-**Tasks**:
-1. **Portfolio Table Enhancements** (60 minutes)
-   ```sql
-   -- Add risk metrics columns to portfolios table
-   ALTER TABLE portfolios ADD COLUMN portfolio_var_95 REAL DEFAULT 0.0;
-   ALTER TABLE portfolios ADD COLUMN portfolio_var_99 REAL DEFAULT 0.0;
-   ALTER TABLE portfolios ADD COLUMN expected_shortfall REAL DEFAULT 0.0;
-   ALTER TABLE portfolios ADD COLUMN correlation_risk REAL DEFAULT 0.0;
-   ALTER TABLE portfolios ADD COLUMN tracking_error REAL DEFAULT 0.0;
-   ```
-
-2. **New Risk Metrics Table** (60 minutes)
-   ```sql
-   CREATE TABLE risk_metrics (
-       metric_id INTEGER PRIMARY KEY AUTOINCREMENT,
-       portfolio_id INTEGER NOT NULL,
-       calculation_date INTEGER NOT NULL,
-       var_95 REAL NOT NULL,
-       var_99 REAL NOT NULL,
-       expected_shortfall REAL NOT NULL,
-       max_drawdown REAL NOT NULL,
-       correlation_risk REAL NOT NULL,
-       FOREIGN KEY (portfolio_id) REFERENCES portfolios(portfolio_id)
-   );
-   ```
-
-3. **Position Risk Enhancement** (60 minutes)
-   ```sql
-   -- Add risk columns to positions table
-   ALTER TABLE positions ADD COLUMN position_var REAL DEFAULT 0.0;
-   ALTER TABLE positions ADD COLUMN beta REAL DEFAULT 0.0;
-   ALTER TABLE positions ADD COLUMN risk_contribution REAL DEFAULT 0.0;
-   ```
-
-#### **Phase 6.3: Testing & Validation** (1 hour)
-- Unit tests for new risk calculation methods
-- Database migration testing
-- Integration with existing repository layer
+**Build on Week 1**: Leverages existing Portfolio/Position models and PortfolioRepository
 
 ---
 
-### **Day 7: Risk Calculation Engine**
-**Duration**: 6-8 hours
-**Focus**: Implement core risk calculation algorithms
+### **Day 7: Dynamic Portfolio Optimization**
+**Objective**: Implement intelligent portfolio allocation and rebalancing algorithms
 
-#### **Phase 7.1: VaR Implementation (3-4 hours)**
+**Tasks (4-5 hours)**:
 
-**Tasks**:
-1. **Historical VaR** (2 hours)
-   ```cpp
-   class HistoricalVaR {
-   public:
-       static double calculate(const std::vector<double>& returns, double confidence);
-       static double calculatePortfolioVaR(
-           const std::map<std::string, std::vector<double>>& assetReturns,
-           const std::map<std::string, double>& weights,
-           double confidence);
-   };
-   ```
+1. **Portfolio Optimization Engine** (2-3 hours)
+   - Implement Modern Portfolio Theory optimization
+   - Add risk-parity allocation algorithms
+   - Create dynamic rebalancing logic
+   - Add constraint handling (leverage limits, position limits)
 
-2. **Parametric VaR** (90 minutes)
-   ```cpp
-   class ParametricVaR {
-   public:
-       static double calculate(double mean, double stdDev, double confidence);
-       static double calculatePortfolioVaR(
-           const std::vector<double>& expectedReturns,
-           const std::vector<std::vector<double>>& covarianceMatrix,
-           const std::vector<double>& weights,
-           double confidence);
-   };
-   ```
+2. **Allocation Algorithms** (1-2 hours)
+   - Equal weight allocation with risk adjustment
+   - Volatility-based position sizing
+   - Sentiment-weighted allocation
+   - Maximum diversification optimization
 
-3. **Monte Carlo VaR (Optional Enhancement)** (30 minutes framework)
-   ```cpp
-   class MonteCarloVaR {
-   public:
-       static double calculate(const std::vector<double>& returns,
-                              double confidence, int simulations = 10000);
-   };
-   ```
+3. **Rebalancing Intelligence** (1 hour)
+   - Threshold-based rebalancing triggers
+   - Cost-aware rebalancing (minimize transaction costs)
+   - Time-based rebalancing schedules
+   - Risk-triggered emergency rebalancing
 
-#### **Phase 7.2: Advanced Risk Metrics (2-3 hours)**
+**Deliverables**:
+- Portfolio optimization engine with multiple algorithms
+- Dynamic rebalancing system
+- Allocation constraint enforcement
+- Integration with existing position management
 
-**Tasks**:
-1. **Expected Shortfall (CVaR)** (60 minutes)
-   ```cpp
-   double calculateExpectedShortfall(const std::vector<double>& returns, double confidence) {
-       double var = calculateVaR(returns, confidence);
-       // Calculate average of returns below VaR threshold
-       std::vector<double> tailReturns;
-       for (double ret : returns) {
-           if (ret <= var) tailReturns.push_back(ret);
-       }
-       return std::accumulate(tailReturns.begin(), tailReturns.end(), 0.0) / tailReturns.size();
-   }
-   ```
-
-2. **Maximum Drawdown** (60 minutes)
-   ```cpp
-   double calculateMaxDrawdown(const std::vector<double>& values) {
-       double maxDrawdown = 0.0;
-       double peak = values[0];
-       for (double value : values) {
-           if (value > peak) peak = value;
-           double drawdown = (peak - value) / peak;
-           if (drawdown > maxDrawdown) maxDrawdown = drawdown;
-       }
-       return maxDrawdown;
-   }
-   ```
-
-3. **Correlation Risk Analysis** (60 minutes)
-   ```cpp
-   class CorrelationAnalysis {
-   public:
-       static std::vector<std::vector<double>> calculateCorrelationMatrix(
-           const std::map<std::string, std::vector<double>>& returns);
-       static double calculatePortfolioCorrelationRisk(
-           const std::vector<std::vector<double>>& correlationMatrix,
-           const std::vector<double>& weights);
-   };
-   ```
-
-#### **Phase 7.3: Performance Optimization & Testing** (1 hour)
-- Algorithm performance validation
-- Memory usage optimization
-- Comprehensive unit testing
+**Build on Week 1**: Uses existing PortfolioRepository and database infrastructure
 
 ---
 
-### **Day 8: Repository Layer Integration**
-**Duration**: 6-8 hours
-**Focus**: Integrate risk calculations with existing repository pattern
+### **Day 8: Performance Attribution & Analytics**
+**Objective**: Detailed analysis and reporting of trading performance drivers
 
-#### **Phase 8.1: Enhanced PortfolioRepository (3-4 hours)**
+**Tasks (4-5 hours)**:
 
-**Tasks**:
-1. **Risk Calculation Methods** (2 hours)
-   ```cpp
-   class PortfolioRepository {
-   public:
-       // New Week 2 methods
-       bool calculateAndStorePortfolioVaR(int portfolioId, double confidence);
-       std::vector<RiskMetrics> getPortfolioRiskHistory(int portfolioId, int days);
-       bool updatePortfolioRiskMetrics(const RiskMetrics& metrics);
+1. **Performance Attribution Engine** (2-3 hours)
+   - Factor-based performance attribution
+   - Asset allocation vs security selection analysis
+   - Leverage contribution analysis
+   - Sentiment impact attribution
 
-       // Risk monitoring
-       std::vector<Portfolio> getPortfoliosAboveVaRThreshold(double threshold);
-       std::vector<Portfolio> getPortfoliosRequiringRiskReview();
-   };
-   ```
+2. **Advanced Performance Metrics** (1-2 hours)
+   - Rolling Sharpe ratio calculations
+   - Maximum drawdown analysis with recovery time
+   - Win/loss streak analysis
+   - Risk-adjusted return metrics (Sortino, Calmar)
 
-2. **Position Risk Integration** (90 minutes)
-   ```cpp
-   // Enhanced position risk methods
-   double calculatePositionRiskContribution(int positionId);
-   std::vector<Position> getPositionsAboveRiskThreshold(double threshold);
-   bool updatePositionRiskMetrics(int positionId, const PositionRiskMetrics& metrics);
-   ```
+3. **Benchmarking Framework** (1 hour)
+   - Market benchmark comparison
+   - Strategy vs benchmark attribution
+   - Relative performance tracking
+   - Benchmark-adjusted risk metrics
 
-3. **Cross-Repository Risk Analytics** (60 minutes)
-   ```cpp
-   // Integration with MarketDataRepository for risk calculations
-   std::vector<double> getAssetReturns(const std::string& symbol, int days);
-   std::map<std::string, std::vector<double>> getPortfolioAssetReturns(int portfolioId, int days);
-   ```
+**Deliverables**:
+- Performance attribution engine
+- Advanced performance metrics calculator
+- Benchmarking framework
+- Integration with existing backtesting results
 
-#### **Phase 8.2: Risk Metrics Repository (2-3 hours)**
-
-**Tasks**:
-1. **New RiskMetricsRepository** (2 hours)
-   ```cpp
-   class RiskMetricsRepository {
-   private:
-       DatabaseManager& dbManager_;
-
-   public:
-       // Core CRUD operations
-       bool insertRiskMetrics(const RiskMetrics& metrics);
-       std::optional<RiskMetrics> getLatestRiskMetrics(int portfolioId);
-       std::vector<RiskMetrics> getRiskMetricsHistory(int portfolioId, int days);
-
-       // Risk analysis queries
-       std::vector<RiskMetrics> getHighRiskPortfolios(double varThreshold);
-       RiskMetrics calculateAggregatedRisk();
-   };
-   ```
-
-2. **Database Integration** (60 minutes)
-   - SQL statement preparation for risk metrics
-   - Transaction management for risk calculations
-   - Performance optimization for risk queries
-
-#### **Phase 8.3: Testing & Integration Validation** (1 hour)
-- Repository integration testing
-- Cross-repository functionality validation
-- Performance impact assessment
+**Build on Week 1**: Extends existing backtest_results table and analytics
 
 ---
 
-### **Day 9: Dynamic Position Sizing & Portfolio Optimization**
-**Duration**: 6-8 hours
-**Focus**: Implement intelligent position sizing based on risk metrics
+### **Day 9: Predictive Risk Modeling**
+**Objective**: Forward-looking risk scenario analysis and stress testing
 
-#### **Phase 9.1: Position Sizing Algorithms (3-4 hours)**
+**Tasks (4-5 hours)**:
 
-**Tasks**:
-1. **Kelly Criterion Implementation** (90 minutes)
-   ```cpp
-   class PositionSizing {
-   public:
-       static double kellyOptimal(double winRate, double avgWin, double avgLoss);
-       static double kellyWithVaR(double expectedReturn, double variance, double maxRisk);
+1. **Scenario Analysis Framework** (2-3 hours)
+   - Monte Carlo simulation engine
+   - Historical scenario replay
+   - Stress testing scenarios (market crash, liquidity crisis)
+   - Correlation breakdown scenarios
 
-       // Risk-adjusted position sizing
-       static std::map<std::string, double> calculateOptimalWeights(
-           const std::map<std::string, double>& expectedReturns,
-           const std::vector<std::vector<double>>& covarianceMatrix,
-           double riskTolerance);
-   };
-   ```
+2. **Predictive Models** (1-2 hours)
+   - VaR forecasting models
+   - Volatility forecasting (GARCH-like models)
+   - Correlation forecasting
+   - Risk regime detection
 
-2. **Risk Parity Approach** (90 minutes)
-   ```cpp
-   class RiskParityOptimizer {
-   public:
-       static std::vector<double> calculateRiskParityWeights(
-           const std::vector<std::vector<double>>& covarianceMatrix);
-       static std::vector<double> optimizeForTargetVolatility(
-           const std::vector<double>& baseWeights,
-           double targetVolatility);
-   };
-   ```
+3. **Risk Alerts & Monitoring** (1 hour)
+   - Real-time risk monitoring dashboard data
+   - Automated risk alert system
+   - Risk limit breach detection
+   - Escalation procedures for risk events
 
-3. **VaR-Constrained Optimization** (90 minutes)
-   ```cpp
-   class VaRConstrainedOptimizer {
-   public:
-       static std::vector<double> optimizeWithVaRConstraint(
-           const std::vector<double>& expectedReturns,
-           const std::vector<std::vector<double>>& covarianceMatrix,
-           double maxVaR);
-   };
-   ```
+**Deliverables**:
+- Monte Carlo simulation engine
+- Scenario analysis framework
+- Predictive risk models
+- Risk monitoring and alert system
 
-#### **Phase 9.2: Portfolio Rebalancing Logic (2-3 hours)**
-
-**Tasks**:
-1. **Rebalancing Triggers** (90 minutes)
-   ```cpp
-   class RebalancingEngine {
-   public:
-       struct RebalancingTrigger {
-           double driftThreshold = 0.05;  // 5% drift from target
-           double riskThreshold = 0.02;   // 2% VaR increase
-           int timeThreshold = 7;         // 7 days since last rebalance
-       };
-
-       bool shouldRebalance(int portfolioId, const RebalancingTrigger& triggers);
-       std::map<std::string, double> calculateRebalancingTrades(int portfolioId);
-   };
-   ```
-
-2. **Risk-Adjusted Rebalancing** (90 minutes)
-   ```cpp
-   // Intelligent rebalancing considering transaction costs and risk
-   std::vector<Trade> generateRiskAdjustedTrades(
-       int portfolioId,
-       const std::map<std::string, double>& targetWeights,
-       double maxTransactionCost);
-   ```
-
-#### **Phase 9.3: Integration & Testing** (1 hour)
-- Position sizing integration with existing portfolio management
-- Rebalancing logic testing
-- Performance validation
+**Build on Week 1**: Uses existing market data and sentiment integration
 
 ---
 
-### **Day 10: Real-Time Risk Monitoring & Week 2 Completion**
-**Duration**: 6-8 hours
-**Focus**: Complete risk monitoring system and Week 2 validation
+### **Day 10: Week 2 Integration & Validation**
+**Objective**: Complete Week 2 integration testing and prepare for Week 3
 
-#### **Phase 10.1: Risk Monitoring Dashboard Logic (3-4 hours)**
+**Tasks (4-5 hours)**:
 
-**Tasks**:
-1. **Risk Alert System** (2 hours)
-   ```cpp
-   class RiskAlertSystem {
-   public:
-       struct RiskAlert {
-           enum AlertLevel { INFO, WARNING, CRITICAL };
-           AlertLevel level;
-           std::string message;
-           int portfolioId;
-           double currentValue;
-           double threshold;
-           std::chrono::system_clock::time_point timestamp;
-       };
+1. **Integration Testing** (2-3 hours)
+   - End-to-end risk-aware portfolio workflows
+   - Performance attribution accuracy validation
+   - Risk model calibration and backtesting
+   - Integration with existing repository layer
 
-       std::vector<RiskAlert> checkPortfolioRisks();
-       std::vector<RiskAlert> checkPositionRisks();
-       bool sendRiskAlert(const RiskAlert& alert);
-   };
-   ```
+2. **Performance Optimization** (1-2 hours)
+   - Optimize risk calculation algorithms
+   - Database query optimization for new features
+   - Memory usage optimization for simulations
+   - Parallel processing for Monte Carlo simulations
 
-2. **Real-Time Risk Calculations** (90 minutes)
-   ```cpp
-   class RealTimeRiskEngine {
-   public:
-       // Continuous risk monitoring
-       void updatePortfolioRisk(int portfolioId);
-       RiskMetrics getCurrentRiskMetrics(int portfolioId);
-       std::vector<RiskAlert> getActiveRiskAlerts();
+3. **Week 2 Completion & Week 3 Preparation** (1 hour)
+   - Week 2 completion report
+   - Week 3 HTTP client planning
+   - Update development documentation
+   - Strategic preparation for API integration
 
-       // Risk scenario analysis
-       double calculateStressTestVaR(int portfolioId, double stressScenario);
-   };
-   ```
+**Deliverables**:
+- Complete integration test suite for Week 2
+- Performance optimizations
+- Week 2 completion report
+- Week 3 preparation notes
 
-#### **Phase 10.2: Week 2 Integration Testing (2-3 hours)**
-
-**Tasks**:
-1. **End-to-End Risk Workflow** (90 minutes)
-   - Portfolio creation → Position addition → Risk calculation → Alert generation
-   - Cross-repository integration validation
-   - Performance under realistic data loads
-
-2. **Risk Scenario Testing** (60 minutes)
-   - High correlation scenarios
-   - Market stress scenarios
-   - Position concentration scenarios
-   - Margin call scenarios with new risk metrics
-
-3. **Performance Validation** (30 minutes)
-   - Risk calculation performance (target: <100ms for portfolio VaR)
-   - Memory usage with advanced risk models
-   - Database performance with new risk tables
-
-#### **Phase 10.3: Week 2 Completion & Documentation** (1 hour)
-
-**Tasks**:
-1. **Week 2 Completion Report** (30 minutes)
-   - Feature completion validation
-   - Performance benchmarks
-   - Integration with Week 1 foundation confirmed
-
-2. **Week 3 Preparation** (30 minutes)
-   - HTTP Client & JSON preparation notes
-   - API integration requirements assessment
-   - Architecture readiness for external data sources
+**Build on Week 1**: Validates all Week 2 enhancements with existing foundation
 
 ---
 
-## 🎯 **Week 2 Deliverables Checklist**
+## 🏗️ Technical Architecture Integration
 
-### **Core Functionality**
-- [ ] **VaR Calculations**: Historical, Parametric, and Monte Carlo VaR
-- [ ] **Advanced Risk Metrics**: CVaR, Maximum Drawdown, Correlation Analysis
-- [ ] **Position Sizing**: Kelly Criterion, Risk Parity, VaR-Constrained
-- [ ] **Portfolio Optimization**: Efficient frontier, risk-adjusted allocation
-- [ ] **Risk Monitoring**: Real-time alerts and dashboard logic
-- [ ] **Repository Integration**: Seamless operation with Week 1 foundation
+### **Week 1 Foundation Leveraged**:
 
-### **Technical Requirements**
-- [ ] **Performance**: Risk calculations <100ms, maintain 5x database performance
-- [ ] **Integration**: All Week 1 functionality preserved and enhanced
-- [ ] **Testing**: >90% test coverage including risk scenarios
-- [ ] **Documentation**: Complete API documentation for new features
-- [ ] **Memory Usage**: <300MB total (100MB increase budget)
-- [ ] **Error Handling**: Comprehensive error management for risk calculations
+**Database Layer** (Reuse):
+- ✅ Existing portfolio and position tables ready for new analytics
+- ✅ Market data integration for risk calculations
+- ✅ Sentiment data for enhanced attribution
+- ✅ Transaction management for portfolio updates
 
-### **Business Value**
-- [ ] **Risk Management**: Enterprise-grade portfolio risk monitoring
-- [ ] **Position Sizing**: Intelligent, risk-adjusted position allocation
-- [ ] **Portfolio Optimization**: Modern portfolio theory implementation
-- [ ] **Real-Time Monitoring**: Continuous risk assessment and alerting
-- [ ] **Regulatory Readiness**: Risk reporting framework for compliance
-- [ ] **Competitive Advantage**: Advanced risk management beyond basic platforms
+**Repository Layer** (Extend):
+- ✅ PortfolioRepository extended with risk query methods
+- ✅ MarketDataRepository used for risk calculations
+- ✅ SentimentRepository integrated for attribution analysis
+- ✅ Cross-repository analytics for comprehensive insights
+
+**Model Layer** (Enhance):
+- ✅ Portfolio class extended with risk analytics methods
+- ✅ Position class enhanced with risk sensitivities
+- ✅ New risk-aware data structures built on existing patterns
+- ✅ Performance attribution models using existing framework
 
 ---
 
-## 📊 **Success Metrics for Week 2**
+## 🎯 Success Criteria for Week 2
 
-### **Performance Targets**
-| Metric | Target | Rationale |
-|--------|--------|-----------|
-| VaR Calculation | <100ms | Real-time risk monitoring requirement |
-| Portfolio Optimization | <500ms | Daily rebalancing timeline |
-| Risk Alert Generation | <50ms | Immediate risk notification |
-| Memory Usage | <300MB | Reasonable growth from Week 1 baseline |
-| Database Performance | Maintain 5x advantage | Preserve Week 1 performance gains |
+### **Technical Objectives**:
+1. **✅ Risk Analytics**: VaR, correlation, concentration risk calculations working
+2. **✅ Portfolio Optimization**: MPT and risk-parity algorithms implemented
+3. **✅ Performance Attribution**: Factor-based attribution with sentiment impact
+4. **✅ Predictive Models**: Monte Carlo simulations and scenario analysis
+5. **✅ Integration**: All Week 2 features integrated with Week 1 foundation
 
-### **Quality Metrics**
-| Area | Target | Validation Method |
-|------|--------|-------------------|
-| Test Coverage | >90% | Automated testing with risk scenarios |
-| Risk Accuracy | >99% | Mathematical validation against known datasets |
-| Integration | 100% | All Week 1 features operational with enhancements |
-| Documentation | 100% | Complete API documentation for new features |
-| Error Handling | 100% | Comprehensive error scenarios tested |
+### **Performance Targets**:
+- **Risk Calculations**: <10ms for portfolio-level risk metrics
+- **Portfolio Optimization**: <100ms for 20-asset portfolio optimization
+- **Monte Carlo**: <1s for 10,000 simulation paths
+- **Memory Usage**: <300MB total (including simulations)
 
-### **Business Value Metrics**
-| Capability | Target | Business Impact |
-|------------|--------|-----------------|
-| Risk Transparency | Real-time | Portfolio managers can make informed decisions |
-| Position Optimization | Automated | Improved risk-adjusted returns |
-| Alert System | <1 minute latency | Rapid response to risk events |
-| Regulatory Reporting | Ready | Compliance framework established |
-| Competitive Advantage | Quantified | Advanced risk management vs. competitors |
+### **Quality Standards**:
+- **Code Quality**: Maintain Week 1 professional C++17 standards
+- **Testing**: Comprehensive integration testing with edge cases
+- **Documentation**: Update all documentation with Week 2 features
+- **Performance**: No degradation of Week 1 performance characteristics
 
 ---
 
-## 🚀 **Strategic Advantages of Week 2 Completion**
+## 🚀 Strategic Advantages of Week 2
 
-### **Technical Excellence**
-1. **Advanced Risk Management**: Beyond basic stop-losses to sophisticated VaR models
-2. **Portfolio Optimization**: Modern portfolio theory implementation
-3. **Real-Time Monitoring**: Continuous risk assessment and alerting
-4. **Mathematical Rigor**: Proven risk calculation methodologies
-5. **Integration Architecture**: Seamless enhancement of Week 1 foundation
+### **Competitive Differentiation**:
 
-### **Business Differentiation**
-1. **Institutional-Grade Risk**: Compete with professional trading platforms
-2. **Automated Optimization**: Intelligent position sizing and rebalancing
-3. **Regulatory Compliance**: Risk reporting framework ready
-4. **Transparency**: Clear risk attribution and monitoring
-5. **Scalability**: Architecture ready for multi-portfolio management
+1. **Advanced Risk Management**: Beyond basic stop-losses to sophisticated risk analytics
+2. **Dynamic Optimization**: Real-time portfolio optimization with multiple algorithms
+3. **Performance Intelligence**: Deep understanding of trading performance drivers
+4. **Predictive Capabilities**: Forward-looking risk analysis for proactive management
 
-### **Competitive Position**
-1. **Risk Management**: Advanced beyond typical retail platforms
-2. **Performance**: Institutional-grade speed with sophisticated calculations
-3. **Integration**: Seamless operation with existing trading logic
-4. **Innovation**: Modern risk methodologies in cryptocurrency trading
-5. **Professional Grade**: Enterprise-quality risk management system
+### **Preparation for Future Milestones**:
+
+**Week 3 HTTP Client**: Risk-aware data ingestion and validation
+**Week 5 API Research**: Risk management requirements for broker evaluation
+**Week 9-12 ML Models**: Enhanced feature set from risk analytics
+**Week 17-20 UI**: Rich risk and performance visualization capabilities
 
 ---
 
-## 🔮 **Week 3 Preparation Notes**
+## ⚡ Implementation Strategy
 
-### **HTTP Client & JSON Integration Requirements**
-- **Foundation Ready**: Week 2 risk models will integrate with live market data
-- **API Requirements**: Real-time risk calculations need continuous market feeds
-- **Risk Data Sources**: VaR calculations require historical price data APIs
-- **Performance Integration**: HTTP client must maintain Week 1+2 performance standards
+### **Build Incrementally**:
+- Start with simple risk metrics, evolve to sophisticated models
+- Leverage existing Week 1 infrastructure for all new features
+- Maintain backward compatibility with existing functionality
+- Add new capabilities without disrupting proven systems
 
-### **Architecture Readiness**
-- **Repository Pattern**: Ready for external data source integration
-- **Risk Calculations**: Will enhance with real-time market data
-- **Performance Framework**: Established benchmarks for API integration
-- **Error Handling**: Comprehensive framework ready for network operations
+### **Focus on Integration**:
+- Every Week 2 feature should integrate with existing repositories
+- Risk analytics should leverage market data and sentiment integration
+- Performance attribution should use existing backtesting framework
+- New features should enhance rather than replace existing capabilities
 
----
-
-## 🏁 **Week 2 Conclusion: Risk-Aware Portfolio Management**
-
-**Upon completion of Week 2, CryptoClaude will be transformed from a solid trading foundation into a sophisticated risk-aware portfolio management system.**
-
-### **Transformation Summary**
-- **From**: Basic leverage and margin management
-- **To**: Enterprise-grade risk analytics and optimization
-- **Added Value**: Professional portfolio management capabilities
-- **Competitive Position**: Institutional-grade risk management
-- **Business Ready**: Advanced risk monitoring and optimization
-
-**Week 2 will establish CryptoClaude as a serious competitor to institutional trading platforms with advanced risk management capabilities that exceed most retail and many professional solutions.**
+### **Quality First**:
+- Comprehensive testing for all risk calculations
+- Validation against known benchmarks and theoretical results
+- Performance profiling to maintain system responsiveness
+- Professional documentation for all new algorithms and methods
 
 ---
 
-*Strategic Plan prepared during Day 5 autonomous execution*
-*Foundation: Week 1 Complete (Production-Ready Repository Layer)*
-*Timeline: Days 6-10, ready for immediate execution*
+## 🎯 Week 2 Success Definition
+
+**By the end of Week 2, CryptoClaude will have:**
+
+1. **Institutional-Grade Risk Management**: Comprehensive risk analytics comparable to professional trading systems
+2. **Dynamic Portfolio Intelligence**: Automated optimization and rebalancing capabilities
+3. **Performance Transparency**: Deep insights into what drives trading performance
+4. **Predictive Risk Capabilities**: Forward-looking scenario analysis and stress testing
+5. **Seamless Integration**: All Week 2 features working harmoniously with Week 1 foundation
+
+**Outcome**: A sophisticated trading platform with professional-grade risk management, ready for Week 3 real-world data integration.
+
+---
+
+## 📋 Preparation Notes for Week 3
+
+### **HTTP Client & JSON Requirements** (Week 3):
+- Risk-aware data validation for incoming market data
+- Enhanced error handling for API failures affecting risk calculations
+- Real-time risk monitoring during data ingestion
+- Performance optimization for high-frequency risk updates
+
+### **Critical Week 5 API Research Preparation**:
+- Document risk management requirements for broker evaluation
+- Identify APIs needed for real-time risk monitoring
+- Prepare risk-based criteria for exchange selection
+- Plan integration of risk models with live trading APIs
+
+---
+
+**🎯 Week 2 Ready to Execute**
+
+*Building upon Week 1's solid foundation to create institutional-grade risk intelligence.*
+
+**Next Action**: Begin Day 6 implementation when Week 2 execution begins.
