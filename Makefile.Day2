@@ -1,0 +1,58 @@
+# Day 2 Build System
+# CryptoClaude Trading Platform - Week 1, Day 2 Components
+
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -Wextra -I.
+LDFLAGS = -lsqlite3 -lcrypto -lssl -lcurl
+
+# Source files
+SOURCES = \
+	src/Core/Console/CommandFramework.cpp \
+	src/Core/DataPipeline/EnhancedMarketDataPipeline.cpp \
+	Day2IntegrationTest.cpp
+
+# Object files
+OBJECTS = $(SOURCES:.cpp=.o)
+
+# Target executable
+TARGET = Day2IntegrationTest
+
+# Default target
+all: $(TARGET)
+
+# Build the main target
+$(TARGET): $(OBJECTS)
+	$(CXX) $(OBJECTS) -o $@ $(LDFLAGS)
+
+# Compile source files to object files
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Test compilation without linking
+test-compile: $(OBJECTS)
+	@echo "✓ All Day 2 components compiled successfully"
+
+# Clean build artifacts
+clean:
+	rm -f $(OBJECTS) $(TARGET)
+
+# Install dependencies (placeholder for future package management)
+install-deps:
+	@echo "Installing dependencies..."
+	@echo "  - SQLite3 development libraries"
+	@echo "  - OpenSSL development libraries"
+	@echo "  - CURL development libraries"
+
+# Run the integration test
+test: $(TARGET)
+	./$(TARGET)
+
+# Development build with debug symbols
+debug: CXXFLAGS += -g -DDEBUG
+debug: $(TARGET)
+
+# Production build with optimizations
+release: CXXFLAGS += -O2 -DNDEBUG
+release: $(TARGET)
+
+.PHONY: all test-compile clean install-deps test debug release
