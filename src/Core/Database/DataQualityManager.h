@@ -82,6 +82,10 @@ private:
     double m_outlierThreshold;
     double m_completenessThreshold;
 
+    // Security: Whitelist for table and column names to prevent SQL injection
+    std::vector<std::string> m_allowedTables;
+    std::map<std::string, std::vector<std::string>> m_allowedColumns;
+
     // Quality assessment helpers
     double calculateCompleteness(const std::string& tableName, const std::string& columnName);
     double calculateAccuracy(const std::string& tableName, const std::string& columnName);
@@ -110,6 +114,12 @@ private:
     // Persistence
     bool recordQualityMetric(const QualityMetric& metric);
     std::vector<QualityMetric> loadQualityHistory(const std::string& tableName, int daysBack = 7);
+
+    // Security helpers - SQL injection prevention
+    void initializeWhitelist();
+    bool isValidTableName(const std::string& tableName) const;
+    bool isValidColumnName(const std::string& tableName, const std::string& columnName) const;
+    std::string sanitizeIdentifier(const std::string& identifier) const;
 };
 
 } // namespace Database

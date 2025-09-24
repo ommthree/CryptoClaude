@@ -1,0 +1,48 @@
+{
+  "database": {
+    "path": "cryptoClaude_development.db",
+    "connection_pool_size": 5,
+    "timeout_seconds": 10,
+    "enable_wal_mode": false,
+    "backup_interval_hours": 24
+  },
+  "api": {
+    "cryptocompare": {
+      "base_url": "https://min-api.cryptocompare.com/data",
+      "timeout_seconds": 10,
+      "retry_attempts": 2,
+      "rate_limit_requests_per_minute": 50,
+      "api_key_env_var": "CRYPTOCOMPARE_DEV_API_KEY"
+    },
+    "cryptonews": {
+      "enabled": true,
+      "timeout_seconds": 10,
+      "rate_limit_requests_per_minute": 30
+    }
+  },
+  "logging": {
+    "level": "DEBUG",
+    "file_path": "logs/cryptoClaude_development.log",
+    "max_file_size_mb": 50,
+    "backup_count": 3,
+    "enable_console": true
+  },
+  "security": {
+    "api_key_encryption": false,
+    "config_file_permissions": "644",
+    "log_sensitive_data": true,
+    "secure_temp_files": true
+  },
+  "performance": {
+    "max_memory_usage_mb": 256,
+    "cpu_usage_limit_percent": 90,
+    "disk_space_warning_mb": 500,
+    "health_check_interval_seconds": 120
+  },
+  "trading": {
+    "max_position_size_usd": 100,
+    "max_daily_trades": 10,
+    "risk_limit_percent": 0.5,
+    "emergency_stop_loss_percent": 2.0
+  }
+}

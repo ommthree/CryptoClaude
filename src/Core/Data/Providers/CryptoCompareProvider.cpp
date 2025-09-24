@@ -1,5 +1,5 @@
 #include "CryptoCompareProvider.h"
-#include <nlohmann/json.hpp>
+#include "../../Json/JsonHelper.h"
 #include <iostream>
 #include <sstream>
 #include <algorithm>
@@ -9,7 +9,8 @@ namespace CryptoClaude {
 namespace Data {
 namespace Providers {
 
-using json = nlohmann::json;
+using json = CryptoClaude::Json::json;
+using CryptoClaude::Json::JsonHelper;
 
 CryptoCompareProvider::CryptoCompareProvider(std::shared_ptr<IHttpClient> httpClient,
                                            const std::string& apiKey,
@@ -186,30 +187,36 @@ ProviderResponse CryptoCompareProvider::parseHistoricalResponse(const HttpRespon
     }
 
     try {
-        json jsonData = json::parse(httpResponse.getBody());
-
-        if (jsonData.contains("Response") && jsonData["Response"] != "Success") {
+        json jsonData;
+        if (!JsonHelper::parseString(httpResponse.getBody(), jsonData)) {
             response.success = false;
-            response.errorMessage = jsonData.value("Message", "Unknown API error");
+            response.errorMessage = "Failed to parse JSON response";
             return response;
         }
 
-        if (jsonData.contains("Data") && jsonData["Data"].contains("Data")) {
-            auto dataArray = jsonData["Data"]["Data"];
-            response.data = createMarketDataListFromJson(originalRequest.symbol, dataArray);
+        std::string apiResponse = JsonHelper::getString(jsonData, "Response", "Success");
+        if (apiResponse != "Success") {
+            response.success = false;
+            response.errorMessage = JsonHelper::getString(jsonData, "Message", "Unknown API error");
+            return response;
+        }
+
+        if (JsonHelper::hasKey(jsonData, "Data") && JsonHelper::isObject(jsonData, "Data")) {
+            const auto& dataObj = jsonData["Data"];
+            if (JsonHelper::hasKey(dataObj, "Data") && JsonHelper::isArray(dataObj, "Data")) {
+                response.data = createMarketDataListFromJson(originalRequest.symbol, dataObj["Data"]);
+            }
         }
 
         response.success = true;
 
         // Check for rate limit info
-        if (jsonData.contains("RateLimit")) {
-            auto rateLimit = jsonData["RateLimit"];
-            if (rateLimit.contains("CallsLeft")) {
-                response.rateLimitRemaining = rateLimit["CallsLeft"].get<double>();
-            }
+        if (JsonHelper::hasKey(jsonData, "RateLimit") && JsonHelper::isObject(jsonData, "RateLimit")) {
+            const auto& rateLimit = jsonData["RateLimit"];
+            response.rateLimitRemaining = JsonHelper::getDouble(rateLimit, "CallsLeft", -1.0);
         }
 
-    } catch (const json::parse_error& e) {
+    } catch (const std::exception& e) {
         response.success = false;
         response.errorMessage = "JSON parse error: " + std::string(e.what());
     } catch (const std::exception& e) {

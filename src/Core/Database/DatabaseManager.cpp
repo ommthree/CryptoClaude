@@ -73,6 +73,122 @@ bool DatabaseManager::executeQuery(const std::string& sql) {
     return true;
 }
 
+bool DatabaseManager::executeParameterizedQuery(const std::string& sql, const std::vector<std::string>& params) {
+    if (!m_isConnected) {
+        m_lastError = "Database not connected";
+        return false;
+    }
+
+    sqlite3_stmt* stmt = prepareStatement(sql);
+    if (!stmt) {
+        return false;
+    }
+
+    // Bind parameters
+    for (size_t i = 0; i < params.size(); ++i) {
+        int result = sqlite3_bind_text(stmt, static_cast<int>(i + 1), params[i].c_str(), -1, SQLITE_STATIC);
+        if (result != SQLITE_OK) {
+            m_lastError = "Failed to bind parameter " + std::to_string(i) + ": " + std::string(sqlite3_errmsg(m_db));
+            finalizeStatement(stmt);
+            return false;
+        }
+    }
+
+    // Execute statement
+    int result = sqlite3_step(stmt);
+    finalizeStatement(stmt);
+
+    if (result != SQLITE_DONE) {
+        m_lastError = "Failed to execute parameterized query: " + std::string(sqlite3_errmsg(m_db));
+        return false;
+    }
+
+    return true;
+}
+
+std::vector<std::map<std::string, std::string>> DatabaseManager::executeSelectQuery(const std::string& sql) {
+    std::vector<std::map<std::string, std::string>> results;
+
+    if (!m_isConnected) {
+        m_lastError = "Database not connected";
+        return results;
+    }
+
+    sqlite3_stmt* stmt = prepareStatement(sql);
+    if (!stmt) {
+        return results;
+    }
+
+    // Execute and collect results
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        std::map<std::string, std::string> row;
+        int columnCount = sqlite3_column_count(stmt);
+
+        for (int i = 0; i < columnCount; ++i) {
+            const char* columnName = sqlite3_column_name(stmt, i);
+            const char* value = reinterpret_cast<const char*>(sqlite3_column_text(stmt, i));
+
+            if (columnName && value) {
+                row[columnName] = value;
+            } else if (columnName) {
+                row[columnName] = "";
+            }
+        }
+
+        results.push_back(row);
+    }
+
+    finalizeStatement(stmt);
+    return results;
+}
+
+std::vector<std::map<std::string, std::string>> DatabaseManager::executeSelectQuery(const std::string& sql,
+                                                                                   const std::vector<std::string>& params) {
+    std::vector<std::map<std::string, std::string>> results;
+
+    if (!m_isConnected) {
+        m_lastError = "Database not connected";
+        return results;
+    }
+
+    sqlite3_stmt* stmt = prepareStatement(sql);
+    if (!stmt) {
+        return results;
+    }
+
+    // Bind parameters
+    for (size_t i = 0; i < params.size(); ++i) {
+        int result = sqlite3_bind_text(stmt, static_cast<int>(i + 1), params[i].c_str(), -1, SQLITE_STATIC);
+        if (result != SQLITE_OK) {
+            m_lastError = "Failed to bind parameter " + std::to_string(i) + ": " + std::string(sqlite3_errmsg(m_db));
+            finalizeStatement(stmt);
+            return results;
+        }
+    }
+
+    // Execute and collect results
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        std::map<std::string, std::string> row;
+        int columnCount = sqlite3_column_count(stmt);
+
+        for (int i = 0; i < columnCount; ++i) {
+            const char* columnName = sqlite3_column_name(stmt, i);
+            const char* value = reinterpret_cast<const char*>(sqlite3_column_text(stmt, i));
+
+            if (columnName && value) {
+                row[columnName] = value;
+            } else if (columnName) {
+                row[columnName] = "";
+            }
+        }
+
+        results.push_back(row);
+    }
+
+    finalizeStatement(stmt);
+    return results;
+}
+
 sqlite3_stmt* DatabaseManager::prepareStatement(const std::string& sql) {
     if (!m_isConnected) {
         return nullptr;
@@ -511,6 +627,11 @@ bool StatementWrapper::bindNull(int index) {
 bool StatementWrapper::step() {
     int result = sqlite3_step(m_stmt);
     return result == SQLITE_ROW;
+}
+
+bool StatementWrapper::execute() {
+    int result = sqlite3_step(m_stmt);
+    return result == SQLITE_DONE;
 }
 
 int StatementWrapper::getColumnCount() const {

@@ -2,6 +2,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <map>
 #include <sqlite3.h>
 
 namespace CryptoClaude {
@@ -20,6 +21,14 @@ public:
     bool executeQuery(const std::string& sql);
     bool executeQuery(const std::string& sql,
                       const std::vector<std::string>& params);
+
+    // Secure parameterized query execution
+    bool executeParameterizedQuery(const std::string& sql, const std::vector<std::string>& params);
+
+    // Select query with results
+    std::vector<std::map<std::string, std::string>> executeSelectQuery(const std::string& sql);
+    std::vector<std::map<std::string, std::string>> executeSelectQuery(const std::string& sql,
+                                                                       const std::vector<std::string>& params);
 
     sqlite3_stmt* prepareStatement(const std::string& sql);
     void finalizeStatement(sqlite3_stmt* stmt);
@@ -80,6 +89,7 @@ public:
     bool bindNull(int index);
 
     bool step();
+    bool execute(); // For INSERT/UPDATE/DELETE operations
     int getColumnCount() const;
     std::string getStringColumn(int index) const;
     double getDoubleColumn(int index) const;

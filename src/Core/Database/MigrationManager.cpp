@@ -232,7 +232,8 @@ bool MigrationManager::recordMigration(const Migration& migration) {
     wrapper.bindString(3, migration.description);
     wrapper.bindString(4, migration.checksum);
 
-    return m_dbManager.executeQuery(sql);
+    // Execute the prepared statement, not the raw SQL
+    return wrapper.execute();
 }
 
 bool MigrationManager::removeMigrationRecord(int version) {
@@ -246,7 +247,8 @@ bool MigrationManager::removeMigrationRecord(int version) {
     StatementWrapper wrapper(stmt);
     wrapper.bindInt(1, version);
 
-    return m_dbManager.executeQuery(sql);
+    // Execute the prepared statement, not the raw SQL
+    return wrapper.execute();
 }
 
 std::string MigrationManager::calculateChecksum(const Migration& migration) const {
@@ -264,10 +266,12 @@ bool MigrationManager::executeMigration(const Migration& migration, bool isRollb
     }
 
     bool success;
+    sqlite3* dbHandle = m_dbManager.getSqliteHandle();
+
     if (isRollback && migration.down) {
-        success = migration.down(nullptr); // TODO: Pass actual sqlite3 handle
+        success = migration.down(dbHandle);
     } else if (!isRollback && migration.up) {
-        success = migration.up(nullptr); // TODO: Pass actual sqlite3 handle
+        success = migration.up(dbHandle);
     } else {
         success = false;
     }
@@ -287,7 +291,7 @@ void MigrationManager::loadRegisteredMigrations() {
     migration001.name = "add_data_quality_monitoring";
     migration001.description = "Add tables for data quality monitoring and remediation";
     migration001.checksum = calculateChecksum(migration001);
-    migration001.up = [](sqlite3* db) -> bool {
+    migration001.up = []([[maybe_unused]] sqlite3* db) -> bool {
         const std::string sql = R"(
             CREATE TABLE IF NOT EXISTS data_quality_metrics (
                 metric_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -313,7 +317,7 @@ void MigrationManager::loadRegisteredMigrations() {
         DatabaseManager& dbManager = DatabaseManager::getInstance();
         return dbManager.executeQuery(sql);
     };
-    migration001.down = [](sqlite3* db) -> bool {
+    migration001.down = []([[maybe_unused]] sqlite3* db) -> bool {
         DatabaseManager& dbManager = DatabaseManager::getInstance();
         return dbManager.executeQuery("DROP TABLE IF EXISTS data_quality_metrics");
     };
@@ -326,7 +330,7 @@ void MigrationManager::loadRegisteredMigrations() {
     migration002.name = "add_cross_asset_correlation";
     migration002.description = "Add tables for cross-asset correlation monitoring";
     migration002.checksum = calculateChecksum(migration002);
-    migration002.up = [](sqlite3* db) -> bool {
+    migration002.up = []([[maybe_unused]] sqlite3* db) -> bool {
         const std::string sql = R"(
             CREATE TABLE IF NOT EXISTS cross_asset_data (
                 asset_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -372,7 +376,7 @@ void MigrationManager::loadRegisteredMigrations() {
         DatabaseManager& dbManager = DatabaseManager::getInstance();
         return dbManager.executeQuery(sql);
     };
-    migration002.down = [](sqlite3* db) -> bool {
+    migration002.down = []([[maybe_unused]] sqlite3* db) -> bool {
         DatabaseManager& dbManager = DatabaseManager::getInstance();
         return dbManager.executeQuery(R"(
             DROP TABLE IF EXISTS market_stress_indicators;
@@ -389,7 +393,7 @@ void MigrationManager::loadRegisteredMigrations() {
     migration003.name = "enhance_sentiment_diversification";
     migration003.description = "Add manual override and multi-source sentiment capabilities";
     migration003.checksum = calculateChecksum(migration003);
-    migration003.up = [](sqlite3* db) -> bool {
+    migration003.up = []([[maybe_unused]] sqlite3* db) -> bool {
         const std::string sql = R"(
             ALTER TABLE news_sources ADD COLUMN quality_tier TEXT DEFAULT 'general';
             ALTER TABLE news_sources ADD COLUMN reliability_score REAL DEFAULT 0.5;
@@ -430,7 +434,7 @@ void MigrationManager::loadRegisteredMigrations() {
         DatabaseManager& dbManager = DatabaseManager::getInstance();
         return dbManager.executeQuery(sql);
     };
-    migration003.down = [](sqlite3* db) -> bool {
+    migration003.down = []([[maybe_unused]] sqlite3* db) -> bool {
         DatabaseManager& dbManager = DatabaseManager::getInstance();
         return dbManager.executeQuery(R"(
             DROP TABLE IF EXISTS multi_source_sentiment;

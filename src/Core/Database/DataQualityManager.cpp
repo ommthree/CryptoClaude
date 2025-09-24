@@ -16,6 +16,7 @@ DataQualityManager::DataQualityManager(DatabaseManager& dbManager)
     , m_outlierThreshold(3.0)  // 3 standard deviations
     , m_completenessThreshold(0.99) // 99% completeness threshold
 {
+    initializeWhitelist();
 }
 
 bool DataQualityManager::initialize() {
@@ -210,6 +211,13 @@ bool DataQualityManager::validateMarketData() {
 
 // Implementation of helper methods
 double DataQualityManager::calculateCompleteness(const std::string& tableName, const std::string& columnName) {
+    // Security validation to prevent SQL injection
+    if (!isValidTableName(tableName) || !isValidColumnName(tableName, columnName)) {
+        std::cerr << "DataQualityManager: Invalid table or column name - " << tableName << "." << columnName << std::endl;
+        return 0.0;
+    }
+
+    // Safe to use validated table and column names directly (they are from whitelist)
     std::string totalSql = "SELECT COUNT(*) FROM " + tableName;
     std::string nullSql = "SELECT COUNT(*) FROM " + tableName + " WHERE " + columnName + " IS NULL";
 
@@ -236,6 +244,12 @@ double DataQualityManager::calculateCompleteness(const std::string& tableName, c
 }
 
 double DataQualityManager::calculateAccuracy(const std::string& tableName, const std::string& columnName) {
+    // Security validation to prevent SQL injection
+    if (!isValidTableName(tableName) || !isValidColumnName(tableName, columnName)) {
+        std::cerr << "DataQualityManager: Invalid table or column name - " << tableName << "." << columnName << std::endl;
+        return 0.0;
+    }
+
     // Simple accuracy check based on reasonable ranges
     if (columnName.find("price") != std::string::npos) {
         // Price should be positive
@@ -269,6 +283,12 @@ double DataQualityManager::calculateAccuracy(const std::string& tableName, const
 }
 
 int DataQualityManager::countOutliers(const std::string& tableName, const std::string& columnName) {
+    // Security validation to prevent SQL injection
+    if (!isValidTableName(tableName) || !isValidColumnName(tableName, columnName)) {
+        std::cerr << "DataQualityManager: Invalid table or column name - " << tableName << "." << columnName << std::endl;
+        return 0;
+    }
+
     // Calculate mean and standard deviation
     std::string statsSql = "SELECT AVG(" + columnName + "), COUNT(" + columnName + ") FROM " +
                           tableName + " WHERE " + columnName + " IS NOT NULL";
@@ -330,6 +350,12 @@ int DataQualityManager::countOutliers(const std::string& tableName, const std::s
 }
 
 int DataQualityManager::getTotalRecordCount(const std::string& tableName) {
+    // Security validation to prevent SQL injection
+    if (!isValidTableName(tableName)) {
+        std::cerr << "DataQualityManager: Invalid table name - " << tableName << std::endl;
+        return 0;
+    }
+
     std::string sql = "SELECT COUNT(*) FROM " + tableName;
     auto stmt = m_dbManager.prepareStatement(sql);
     if (!stmt) {
@@ -418,13 +444,13 @@ bool DataQualityManager::fixMissingData(const std::string& tableName, const std:
     return interpolateMissingValues(tableName, columnName);
 }
 
-bool DataQualityManager::fixOutliers(const std::string& tableName, const std::string& columnName, double stdThreshold) {
+bool DataQualityManager::fixOutliers(const std::string& tableName, const std::string& columnName, [[maybe_unused]] double stdThreshold) {
     std::cout << "Fixing outliers in " << tableName << "." << columnName << std::endl;
     // Implementation would cap extreme values
     return true;
 }
 
-bool DataQualityManager::interpolateMissingValues(const std::string& tableName, const std::string& columnName) {
+bool DataQualityManager::interpolateMissingValues([[maybe_unused]] const std::string& tableName, [[maybe_unused]] const std::string& columnName) {
     // Simple linear interpolation implementation
     return true;
 }
@@ -466,6 +492,12 @@ bool DataQualityManager::validateVolumeData(const std::string& symbol) {
 }
 
 bool DataQualityManager::validateTimestampConsistency(const std::string& tableName) {
+    // Security validation to prevent SQL injection
+    if (!isValidTableName(tableName)) {
+        std::cerr << "DataQualityManager: Invalid table name - " << tableName << std::endl;
+        return false;
+    }
+
     // Check for duplicate timestamps per symbol
     std::string sql = "SELECT COUNT(*) FROM (SELECT symbol, timestamp, COUNT(*) as cnt FROM " +
                      tableName + " GROUP BY symbol, timestamp HAVING cnt > 1)";
@@ -533,6 +565,63 @@ double DataQualityManager::getOverallQualityScore() {
     }
 
     return totalScore / metrics.size();
+}
+
+// Security helpers - SQL injection prevention
+void DataQualityManager::initializeWhitelist() {
+    // Initialize allowed table names
+    m_allowedTables = {
+        "market_data", "hourly_data", "market_cap", "liquidity_lambda", "filtered_liquidity_lambda",
+        "news_sources", "temp_news_sentiment", "news_date_mapping", "sentiment_data", "news_articles", "aggregated_sentiment",
+        "portfolios", "positions", "broker_accounts", "orders", "backtest_results",
+        "forest_input", "rf_diagnostics", "data_quality_metrics"
+    };
+
+    // Initialize allowed column names for each table
+    m_allowedColumns["market_data"] = {"symbol", "timestamp", "date", "close_price", "volume_from", "volume_to", "net_inflow", "excess_inflow", "hourly_inflow", "day_of_week", "month_of_year", "article_count", "average_sentiment", "rsi", "macd", "bollinger_position"};
+    m_allowedColumns["hourly_data"] = {"time", "date", "symbol", "close", "volumefrom", "volumeto", "time_readable", "net_inflow", "excess_inflow", "day_of_week", "month_of_year"};
+    m_allowedColumns["market_cap"] = {"symbol", "market_cap"};
+    m_allowedColumns["liquidity_lambda"] = {"symbol", "lambda_250", "lambda_250_500", "r_squared_250"};
+    m_allowedColumns["filtered_liquidity_lambda"] = {"symbol", "lambda_250", "lambda_250_500", "r_squared_250"};
+    m_allowedColumns["news_sources"] = {"source_id", "name", "urlMap", "priority"};
+    m_allowedColumns["temp_news_sentiment"] = {"source_name", "article_count", "avg_sentiment", "date", "ticker"};
+    m_allowedColumns["news_date_mapping"] = {"api_date", "sql_date"};
+    m_allowedColumns["sentiment_data"] = {"ticker", "source_name", "date", "article_count", "avg_sentiment", "timestamp", "sentiment_1d", "sentiment_7d_avg", "sentiment_trend", "confidence"};
+    m_allowedColumns["news_articles"] = {"article_id", "source_id", "ticker", "title", "content", "url", "published_at", "sentiment_score", "confidence", "processed"};
+    m_allowedColumns["aggregated_sentiment"] = {"ticker", "date", "avg_sentiment", "sentiment_volatility", "total_articles", "positive_count", "negative_count", "neutral_count", "weighted_sentiment"};
+    m_allowedColumns["portfolios"] = {"portfolio_id", "strategy_name", "timestamp", "total_value", "total_pnl", "cash_balance", "current_leverage", "max_allowed_leverage", "margin_used", "available_margin", "margin_utilization", "portfolio_stop_level", "stop_loss_triggered", "max_drawdown_limit"};
+    m_allowedColumns["positions"] = {"position_id", "portfolio_id", "symbol", "quantity", "entry_price", "current_price", "entry_time", "is_long", "pnl", "margin_requirement", "leverage_ratio", "stop_loss_price", "position_stop_triggered", "initial_margin"};
+    m_allowedColumns["broker_accounts"] = {"account_id", "broker_name", "api_endpoint", "account_status", "available_balance", "margin_balance", "buying_power", "maintenance_margin", "created_time"};
+    m_allowedColumns["orders"] = {"order_id", "portfolio_id", "symbol", "order_type", "side", "quantity", "price", "stop_price", "status", "broker_order_id", "created_time", "filled_time"};
+    m_allowedColumns["backtest_results"] = {"result_id", "strategy_name", "start_date", "end_date", "initial_capital", "final_value", "total_return", "sharpe_ratio", "max_drawdown", "total_trades", "win_rate", "max_leverage_used", "avg_leverage", "margin_calls_count", "forced_liquidations"};
+    m_allowedColumns["forest_input"] = {"symbol", "date", "sentiment_1d", "sentiment_7d_avg", "inflow_gradient", "inflow_100d_avg", "target_f"};
+    m_allowedColumns["rf_diagnostics"] = {"symbol", "date", "actual", "predicted", "abs_error", "feature_1", "feature_2", "feature_3", "feature_4"};
+    m_allowedColumns["data_quality_metrics"] = {"metric_id", "table_name", "column_name", "quality_score", "completeness_ratio", "accuracy_score", "outlier_count", "total_records", "measurement_timestamp", "remediation_applied", "remediation_details"};
+}
+
+bool DataQualityManager::isValidTableName(const std::string& tableName) const {
+    return std::find(m_allowedTables.begin(), m_allowedTables.end(), tableName) != m_allowedTables.end();
+}
+
+bool DataQualityManager::isValidColumnName(const std::string& tableName, const std::string& columnName) const {
+    auto tableIt = m_allowedColumns.find(tableName);
+    if (tableIt == m_allowedColumns.end()) {
+        return false;
+    }
+
+    const auto& columns = tableIt->second;
+    return std::find(columns.begin(), columns.end(), columnName) != columns.end();
+}
+
+std::string DataQualityManager::sanitizeIdentifier(const std::string& identifier) const {
+    // Remove any potentially dangerous characters
+    std::string sanitized;
+    for (char c : identifier) {
+        if (std::isalnum(c) || c == '_') {
+            sanitized += c;
+        }
+    }
+    return sanitized;
 }
 
 } // namespace Database

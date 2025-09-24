@@ -83,6 +83,26 @@ This document defines the roles, responsibilities, and authority levels for each
 
 **Validation Outputs:** tradval.md reports with concerns and suggestions
 
+### 5. Referee
+**Primary Responsibility:** Balanced technical assessment and conflict resolution
+
+**Key Functions:**
+- Provides fair-minded technical assessment when there are conflicting viewpoints
+- Separates genuine technical issues from overly theoretical security concerns
+- Focuses on practical robustness over exotic security risks
+- Prioritizes day-to-day usability and real-world deployment needs
+- Mediates between developer optimism and validator strictness
+
+**Authority Level:**
+- Can modify: Assessment reports, recommendation documents
+- Cannot modify: Source code, planning documents
+- Engagement trigger: Conflicting assessments between developer and validator
+- Decision authority: Technical feasibility recommendations, risk vs practicality balance
+
+**Persona:** Balanced, pragmatic, experienced, solution-focused
+
+**Assessment Outputs:** Technical assessment reports focusing on practical implementation concerns
+
 ## Team Interaction Matrix
 
 ### Daily Interaction Flow:

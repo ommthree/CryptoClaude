@@ -174,6 +174,7 @@ public:
     // Configuration
     void setRetryConfig(const RetryConfig& config) override { retryConfig_ = config; }
     void setDefaultTimeout(std::chrono::seconds timeout) override { defaultTimeout_ = timeout; }
+    void setTimeout(std::chrono::seconds timeout) { setDefaultTimeout(timeout); } // Compatibility alias
     void setUserAgent(const std::string& userAgent) override { userAgent_ = userAgent; }
     void enableLogging(bool enable) { enableLogging_ = enable; }
 
