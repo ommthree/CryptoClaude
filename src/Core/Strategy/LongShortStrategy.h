@@ -1,7 +1,10 @@
 #pragma once
 #include "IStrategy.h"
+#include "../Common/TradingTypes.h"
 #include <map>
 #include <set>
+
+using namespace CryptoClaude::Common;
 
 namespace CryptoClaude {
 namespace Strategy {
@@ -14,21 +17,23 @@ public:
     // IStrategy interface implementation
     std::string getName() const override { return "Long-Short Strategy"; }
     std::string getDescription() const override {
-        return "Market-neutral long-short strategy based on sentiment and inflow predictions";
+        return "Market-neutral long-short pairing strategy with expected return ranking and coin exclusion";
     }
     std::string getVersion() const override { return "1.0"; }
 
     std::vector<TradingSignal> generateSignals(
         const std::string& currentDate,
         const Database::Models::Portfolio& currentPortfolio,
-        const std::vector<MachineLearning::DailyPrediction>& predictions) override;
+        const std::vector<PredictionData>& predictions) override;
 
     bool shouldRebalance(
         const Database::Models::Portfolio& portfolio,
-        const std::vector<MachineLearning::DailyPrediction>& predictions) override;
+        const std::vector<PredictionData>& predictions) override;
 
     void setParameters(const std::map<std::string, double>& parameters) override;
+    void setParameters(const StrategyParameters& parameters);
     std::map<std::string, double> getParameters() const override;
+    StrategyParameters getStrategyParameters() const;
     std::vector<std::string> getRequiredParameters() const override;
 
     double calculatePositionSize(
@@ -47,11 +52,11 @@ public:
     void updatePerformanceMetrics(const Database::Models::Portfolio& portfolio) override;
     StrategyMetrics getPerformanceMetrics() const override;
 
-    // LongShortStrategy specific methods
-    void setLongCount(int count) { m_longPositions = count; }
-    void setShortCount(int count) { m_shortPositions = count; }
+    // Long-Short Pairing Strategy specific methods
+    void setMaxPairs(int pairs) { m_maxTradingPairs = pairs; }
+    void setCashBufferRatio(double ratio) { m_cashBufferRatio = ratio; }
     void setMinConfidenceThreshold(double threshold) { m_minConfidenceThreshold = threshold; }
-    void setMaxPositionSize(double maxSize) { m_maxPositionSize = maxSize; }
+    void setMaxPairAllocation(double maxAllocation) { m_maxPairAllocation = maxAllocation; }
     void setRebalanceThreshold(double threshold) { m_rebalanceThreshold = threshold; }
 
     // Risk management
@@ -63,19 +68,13 @@ public:
     void setTransactionCosts(double basisPoints) { m_transactionCostBps = basisPoints; }
     double calculateTransactionCost(double notionalAmount) const;
 
-private:
-    // Strategy parameters
-    int m_longPositions;
-    int m_shortPositions;
-    double m_minConfidenceThreshold;
-    double m_maxPositionSize;
-    double m_rebalanceThreshold;
+public:
+    // Make TradingPair accessible for integration
+    using TradingPairType = TradingPair;
 
-    // Risk management parameters
-    double m_maxDrawdownLimit;
-    double m_maxPortfolioRisk;
-    double m_stopLossThreshold;
-    double m_transactionCostBps;
+private:
+    // Unified strategy parameters
+    StrategyParameters m_parameters;
 
     // Performance tracking
     mutable StrategyMetrics m_metrics;
@@ -83,34 +82,45 @@ private:
     std::vector<std::chrono::system_clock::time_point> m_valueDates;
     double m_highWaterMark;
 
-    // Position tracking
+    // Pair tracking using unified types
+    std::vector<TradingPair> m_currentPairs;
+    std::vector<TradingPair> m_targetPairs;
     std::map<std::string, double> m_currentWeights;
     std::map<std::string, double> m_targetWeights;
 
-    // Helper methods
-    std::vector<MachineLearning::DailyPrediction> filterPredictions(
-        const std::vector<MachineLearning::DailyPrediction>& predictions) const;
+    // Helper methods using unified types
+    std::vector<PredictionData> filterPredictions(
+        const std::vector<PredictionData>& predictions) const;
 
-    std::vector<std::string> selectLongPositions(
-        const std::vector<MachineLearning::DailyPrediction>& rankedPredictions) const;
+    // Core pairing algorithm - rank by expected return and pair top-bottom
+    std::vector<TradingPair> createTradingPairs(
+        const std::vector<PredictionData>& predictions) const;
 
-    std::vector<std::string> selectShortPositions(
-        const std::vector<MachineLearning::DailyPrediction>& rankedPredictions) const;
+    // Filter predictions based on coin exclusion criteria
+    std::vector<PredictionData> filterExcludedCoins(
+        const std::vector<PredictionData>& predictions) const;
+
+    // Allocate capital to pairs based on confidence
+    std::vector<TradingPair> allocateCapitalToPairs(
+        const std::vector<TradingPair>& pairs) const;
 
     std::vector<TradingSignal> generateRebalanceSignals(
-        const std::vector<std::string>& longSymbols,
-        const std::vector<std::string>& shortSymbols,
-        const Database::Models::Portfolio& currentPortfolio,
-        const std::vector<MachineLearning::DailyPrediction>& predictions) const;
+        const std::vector<TradingPair>& targetPairs,
+        const Database::Models::Portfolio& currentPortfolio) const;
 
-    // Risk calculations
-    double calculatePortfolioRisk(
-        const std::vector<TradingSignal>& signals,
-        const Database::Models::Portfolio& portfolio) const;
+    // Convert pairs to individual position targets
+    std::vector<TradingSignal> convertPairsToSignals(
+        const std::vector<TradingPair>& pairs,
+        const Database::Models::Portfolio& currentPortfolio) const;
 
-    double calculatePositionRisk(const std::string& symbol, double weight) const;
+    // Pair-specific risk calculations
+    double calculatePairRisk(const TradingPair& pair) const;
+    bool isPairWithinLimits(const TradingPair& pair) const;
+    double calculateTotalPairExposure(const std::vector<TradingPair>& pairs) const;
 
-    bool isWithinRiskLimits(double portfolioRisk) const;
+    // Cash buffer protection (critical - never breach)
+    bool isCashBufferPreserved(const std::vector<TradingPair>& pairs) const;
+    double calculateRequiredCash(const std::vector<TradingPair>& pairs) const;
 
     // Performance calculations
     void updateMetricsFromPortfolio(const Database::Models::Portfolio& portfolio);
@@ -125,58 +135,84 @@ private:
         double targetWeight,
         const MachineLearning::DailyPrediction& prediction) const;
 
-    double normalizeWeight(double rawWeight, int totalPositions) const;
-    bool isSignificantWeightChange(const std::string& symbol, double newWeight) const;
+    // Pair utilities
+    double calculatePairReturn(const TradingPair& pair) const;
+    double calculatePairConfidence(const TradingPair& pair) const;
+    bool isSignificantPairChange(const TradingPair& currentPair, const TradingPair& targetPair) const;
 
-    // Validation helpers
-    bool validatePositionCounts() const;
-    bool validateRiskParameters() const;
-    bool validateThresholds() const;
+    // Weight normalization for pairing approach
+    std::vector<TradingPair> normalizePairWeights(
+        const std::vector<TradingPair>& pairs, double totalInvestmentRatio) const;
+
+    // Validation helpers for pairing strategy
+    bool validatePairingParameters() const;
+    bool validateCashBuffer() const;
+    bool validatePairLimits() const;
+    bool validateAllPairs(const std::vector<TradingPair>& pairs) const;
 };
 
-// Strategy utilities
-class LongShortStrategyUtils {
+// Pairing Strategy utilities
+class LongShortPairingUtils {
 public:
-    // Portfolio construction helpers
-    static std::map<std::string, double> calculateOptimalWeights(
-        const std::vector<MachineLearning::DailyPrediction>& predictions,
-        int longCount,
-        int shortCount);
+    // Pair construction helpers
+    static std::vector<TradingPair> createOptimalPairs(
+        const std::vector<PredictionData>& predictions,
+        int maxPairs);
 
-    // Risk management utilities
-    static double calculatePortfolioBeta(
-        const Database::Models::Portfolio& portfolio,
+    // Expected return ranking and pairing
+    static std::vector<PredictionData> rankByExpectedReturn(
+        const std::vector<PredictionData>& predictions);
+
+    static std::vector<TradingPair> pairTopWithBottom(
+        const std::vector<PredictionData>& rankedPredictions,
+        int maxPairs);
+
+    // Pair-specific risk management
+    static double calculatePairCorrelation(
+        const std::string& longSymbol,
+        const std::string& shortSymbol,
         const std::vector<Database::Models::MarketData>& marketData);
 
-    static double calculateTrackingError(
-        const std::vector<double>& portfolioReturns,
-        const std::vector<double>& benchmarkReturns);
+    static bool isPairMarketNeutral(
+        const TradingPair& pair,
+        double correlationThreshold = 0.3);
 
-    // Transaction cost analysis
-    static double calculateTurnover(
-        const std::map<std::string, double>& currentWeights,
-        const std::map<std::string, double>& targetWeights);
+    // Pair-based transaction cost analysis
+    static double calculatePairTurnover(
+        const std::vector<TradingPair>& currentPairs,
+        const std::vector<TradingPair>& targetPairs);
 
-    static double estimateTransactionCosts(
-        const std::vector<TradingSignal>& signals,
+    static double estimatePairTransactionCosts(
+        const std::vector<TradingPair>& pairs,
         double costBasisPoints);
 
-    // Performance attribution
-    struct AttributionResult {
-        double selectionReturn;
-        double allocationReturn;
-        double interactionReturn;
-        double totalActiveReturn;
+    // Pair performance attribution
+    struct PairAttributionResult {
+        double longReturn;
+        double shortReturn;
+        double pairReturn;              // Long - Short (market-neutral return)
+        double pairContribution;
+        std::string longSymbol;
+        std::string shortSymbol;
     };
 
-    static AttributionResult performAttribution(
-        const Database::Models::Portfolio& portfolio,
-        const std::vector<Database::Models::MarketData>& benchmarkData);
+    static std::vector<PairAttributionResult> performPairAttribution(
+        const std::vector<TradingPair>& pairs,
+        const Database::Models::Portfolio& portfolio);
+
+    // Cash buffer analysis
+    static bool validateCashBuffer(
+        const std::vector<TradingPair>& pairs,
+        double totalCapital,
+        double requiredCashRatio);
 
 private:
     static std::vector<double> calculateReturns(const std::vector<double>& prices);
     static double calculateCorrelation(const std::vector<double>& x, const std::vector<double>& y);
 };
+
+// Compatibility alias for existing code
+using LongShortStrategyUtils = LongShortPairingUtils;
 
 } // namespace Strategy
 } // namespace CryptoClaude

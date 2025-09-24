@@ -174,6 +174,19 @@ public:
         double weight = std::min(static_cast<double>(articleCount_), static_cast<double>(maxWeight)) / maxWeight;
         return avgSentiment_ * weight;
     }
+
+    // Compatibility methods for CoinExclusionEngine
+    bool hasRecentNews() const {
+        return articleCount_ > 0;
+    }
+
+    double getSentimentScore() const {
+        return avgSentiment_;
+    }
+
+    std::string getSymbol() const {
+        return ticker_;
+    }
 };
 
 class NewsSource {

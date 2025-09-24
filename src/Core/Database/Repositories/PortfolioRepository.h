@@ -130,14 +130,36 @@ public:
     // Risk analysis
     struct RiskMetrics {
         double var95; // Value at Risk 95%
+        double var99; // Value at Risk 99%
         double expectedShortfall;
         double leverageRisk;
         double concentrationRisk;
+        double correlationRisk;
+        double portfolioVolatility;
+        double diversificationRatio;
+        double maxSinglePositionRisk;
         int marginCallCount;
         int liquidationCount;
+        std::vector<std::pair<std::string, double>> topRiskyPositions;
     };
 
     RiskMetrics calculateRiskMetrics(int portfolioId);
+
+    // Advanced risk query methods
+    std::vector<Models::Position> getHighVolatilityPositions(int portfolioId, double volatilityThreshold = 0.5);
+    std::vector<Models::Position> getPositionsAboveVaRLimit(int portfolioId, double varLimit = 0.05);
+    std::vector<Models::Position> getConcentratedPositions(int portfolioId, double concentrationThreshold = 0.1);
+
+    // Risk monitoring queries
+    std::vector<Models::Portfolio> getPortfoliosWithHighRisk(double riskScoreThreshold = 75.0);
+    std::vector<Models::Position> getPositionsRequiringRiskReview(int portfolioId);
+
+    // Generate comprehensive risk report
+    Models::RiskReport generateRiskReport(int portfolioId);
+
+    // Risk historical data
+    bool storeRiskSnapshot(int portfolioId, const Models::RiskReport& report);
+    std::vector<Models::RiskReport> getRiskHistory(int portfolioId, int days = 30);
 
     // === SPECIALIZED QUERIES FOR TRADING SYSTEM ===
 
@@ -185,6 +207,14 @@ private:
     static const std::string SQL_SELECT_MARGIN_CALL_PORTFOLIOS;
     static const std::string SQL_SELECT_STOP_LOSS_POSITIONS;
     static const std::string SQL_INSERT_BACKTEST_RESULT;
+
+    // Advanced risk query SQL constants
+    static const std::string SQL_SELECT_HIGH_VOLATILITY_POSITIONS;
+    static const std::string SQL_SELECT_HIGH_VAR_POSITIONS;
+    static const std::string SQL_SELECT_CONCENTRATED_POSITIONS;
+    static const std::string SQL_SELECT_HIGH_RISK_PORTFOLIOS;
+    static const std::string SQL_INSERT_RISK_SNAPSHOT;
+    static const std::string SQL_SELECT_RISK_HISTORY;
 };
 
 // Template implementation for transaction wrapper

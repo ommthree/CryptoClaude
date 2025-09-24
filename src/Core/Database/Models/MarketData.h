@@ -220,6 +220,24 @@ public:
     double getTotalVolume() const {
         return volumeFrom_ + volumeTo_;
     }
+
+    // Compatibility methods for CoinExclusionEngine
+    double getPrice() const {
+        return close_;
+    }
+
+    double getVolume() const {
+        return getTotalVolume();
+    }
+
+    // Estimated bid/ask from volume ratio (placeholder)
+    double getBidPrice() const {
+        return close_ * 0.999; // Approximate 0.1% spread
+    }
+
+    double getAskPrice() const {
+        return close_ * 1.001; // Approximate 0.1% spread
+    }
 };
 
 class MarketCapData {

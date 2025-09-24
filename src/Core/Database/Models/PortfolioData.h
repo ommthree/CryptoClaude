@@ -5,6 +5,9 @@
 #include <stdexcept>
 #include <optional>
 #include <cmath>
+#include <algorithm>
+#include <numeric>
+#include <map>
 #include "../../../Configuration/Config.h"
 
 namespace CryptoClaude {
@@ -31,6 +34,15 @@ private:
     double stopLossPrice_;
     bool positionStopTriggered_;
     double initialMargin_;
+
+    // Advanced risk metrics
+    double volatility_;
+    double beta_;
+    double deltaEquivalent_;
+    std::vector<double> priceHistory_;
+    std::chrono::system_clock::time_point lastPriceUpdate_;
+    double maxPriceDrawdown_;
+    double timeDecayRisk_;
 
     void validateQuantity(double qty) const {
         if (std::isnan(qty) || std::isinf(qty)) {
@@ -82,7 +94,10 @@ public:
     Position(const std::string& sym, double qty, double entry, bool long_position, double leverage = 1.0)
         : symbol_(sym), quantity_(qty), entryPrice_(entry), currentPrice_(entry),
           entryTime_(std::chrono::system_clock::now()), isLong_(long_position),
-          leverageRatio_(leverage), positionStopTriggered_(false) {
+          leverageRatio_(leverage), positionStopTriggered_(false),
+          volatility_(0.0), beta_(1.0), deltaEquivalent_(0.0),
+          lastPriceUpdate_(std::chrono::system_clock::now()),
+          maxPriceDrawdown_(0.0), timeDecayRisk_(0.0) {
 
         validateSymbol(sym);
         validateQuantity(qty);
@@ -94,6 +109,10 @@ public:
         initialMargin_ = marginRequirement_;
         stopLossPrice_ = isLong_ ? entry * (1.0 + Config::POSITION_STOP_LOSS)
                                 : entry * (1.0 - Config::POSITION_STOP_LOSS);
+
+        // Initialize price history
+        priceHistory_.push_back(entry);
+        deltaEquivalent_ = std::abs(qty) * entry;
     }
 
     void validateSymbol(const std::string& sym) const {
@@ -121,6 +140,14 @@ public:
     bool isStopLossTriggered() const { return positionStopTriggered_; }
     double getInitialMargin() const { return initialMargin_; }
 
+    // Advanced risk metric getters
+    double getVolatility() const { return volatility_; }
+    double getBeta() const { return beta_; }
+    double getDeltaEquivalent() const { return deltaEquivalent_; }
+    const std::vector<double>& getPriceHistory() const { return priceHistory_; }
+    double getMaxPriceDrawdown() const { return maxPriceDrawdown_; }
+    double getTimeDecayRisk() const { return timeDecayRisk_; }
+
     // Setters with validation
     void setPositionId(int id) { positionId_ = id; }
     void setPortfolioId(int id) { portfolioId_ = id; }
@@ -141,6 +168,12 @@ public:
         validatePrice(price, "Current price");
         currentPrice_ = price;
         calculatePnL();
+
+        // Update price history and risk metrics
+        updatePriceHistory(price);
+        calculateVolatility();
+        updateMaxDrawdown();
+        updateDeltaEquivalent();
 
         // Check stop-loss trigger
         if (isLong_ && currentPrice_ <= stopLossPrice_) {
@@ -167,6 +200,91 @@ public:
 
     void resetStopLoss() {
         positionStopTriggered_ = false;
+    }
+
+    // Advanced risk calculation methods
+private:
+    void updatePriceHistory(double price) {
+        priceHistory_.push_back(price);
+        lastPriceUpdate_ = std::chrono::system_clock::now();
+
+        // Keep only last 100 price points for performance
+        if (priceHistory_.size() > 100) {
+            priceHistory_.erase(priceHistory_.begin());
+        }
+    }
+
+    void calculateVolatility() {
+        if (priceHistory_.size() < 2) {
+            volatility_ = 0.0;
+            return;
+        }
+
+        std::vector<double> returns;
+        for (size_t i = 1; i < priceHistory_.size(); ++i) {
+            double ret = (priceHistory_[i] - priceHistory_[i-1]) / priceHistory_[i-1];
+            returns.push_back(ret);
+        }
+
+        if (returns.empty()) {
+            volatility_ = 0.0;
+            return;
+        }
+
+        double mean = std::accumulate(returns.begin(), returns.end(), 0.0) / returns.size();
+        double variance = 0.0;
+        for (double ret : returns) {
+            variance += std::pow(ret - mean, 2);
+        }
+        variance /= returns.size();
+        volatility_ = std::sqrt(variance) * std::sqrt(365.0); // Annualized volatility
+    }
+
+    void updateMaxDrawdown() {
+        if (priceHistory_.size() < 2) return;
+
+        double peak = *std::max_element(priceHistory_.begin(), priceHistory_.end());
+        double currentDrawdown = (peak - currentPrice_) / peak;
+        maxPriceDrawdown_ = std::max(maxPriceDrawdown_, currentDrawdown);
+    }
+
+    void updateDeltaEquivalent() {
+        deltaEquivalent_ = std::abs(quantity_) * currentPrice_;
+    }
+
+public:
+    // Advanced risk metrics methods
+    double calculatePositionVaR(double confidenceLevel = 0.05, int timeHorizon = 1) const {
+        if (volatility_ <= 0.0) return 0.0;
+
+        // Using parametric VaR calculation
+        double zScore = 1.645; // 95% confidence level default
+        if (confidenceLevel <= 0.01) zScore = 2.326; // 99%
+        else if (confidenceLevel <= 0.05) zScore = 1.645; // 95%
+        else if (confidenceLevel <= 0.10) zScore = 1.282; // 90%
+
+        double dailyVol = volatility_ / std::sqrt(365.0);
+        double timeAdjustedVol = dailyVol * std::sqrt(timeHorizon);
+
+        return getPositionValue() * zScore * timeAdjustedVol;
+    }
+
+    double calculateExpectedShortfall(double confidenceLevel = 0.05, int timeHorizon = 1) const {
+        double var = calculatePositionVaR(confidenceLevel, timeHorizon);
+        // ES is typically 20-30% higher than VaR for normal distribution
+        return var * 1.25;
+    }
+
+    void setBeta(double beta) { beta_ = beta; }
+
+    double calculateTimeDecayRisk() {
+        auto now = std::chrono::system_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::hours>(now - entryTime_);
+        double hoursHeld = static_cast<double>(duration.count());
+
+        // Simple time decay model - risk increases over time
+        timeDecayRisk_ = volatility_ * std::sqrt(hoursHeld / (24.0 * 7.0)); // Weekly normalization
+        return timeDecayRisk_;
     }
 
     // Business logic methods
@@ -216,6 +334,18 @@ private:
     bool stopLossTriggered_;
     double maxDrawdownLimit_;
 
+    // Advanced portfolio risk metrics
+    double portfolioVaR_;
+    double portfolioExpectedShortfall_;
+    double portfolioVolatility_;
+    double portfolioBeta_;
+    double concentrationRisk_;
+    double correlationRisk_;
+    std::vector<double> valueHistory_;
+    std::map<std::string, double> sectorExposure_;
+    double maxCorrelation_;
+    double diversificationRatio_;
+
     void validateValue(double value, const std::string& fieldName) const {
         if (std::isnan(value) || std::isinf(value)) {
             throw std::invalid_argument(fieldName + " cannot be NaN or infinite");
@@ -255,13 +385,18 @@ public:
           currentLeverage_(1.0), maxAllowedLeverage_(maxLeverage),
           marginUsed_(0.0), marginUtilization_(0.0),
           portfolioStopLevel_(Config::PORTFOLIO_STOP_LOSS),
-          stopLossTriggered_(false), maxDrawdownLimit_(Config::PORTFOLIO_STOP_LOSS) {
+          stopLossTriggered_(false), maxDrawdownLimit_(Config::PORTFOLIO_STOP_LOSS),
+          portfolioVaR_(0.0), portfolioExpectedShortfall_(0.0),
+          portfolioVolatility_(0.0), portfolioBeta_(1.0),
+          concentrationRisk_(0.0), correlationRisk_(0.0),
+          maxCorrelation_(0.0), diversificationRatio_(1.0) {
 
         validateStrategyName(name);
         validateValue(initialCash, "Initial cash");
         validateLeverage(maxLeverage);
 
         availableMargin_ = initialCash * maxLeverage;
+        valueHistory_.push_back(initialCash);
     }
 
     void validateStrategyName(const std::string& name) const {
@@ -289,6 +424,18 @@ public:
     bool isStopLossTriggered() const { return stopLossTriggered_; }
     double getMaxDrawdownLimit() const { return maxDrawdownLimit_; }
 
+    // Advanced risk metric getters
+    double getPortfolioVaR() const { return portfolioVaR_; }
+    double getPortfolioExpectedShortfall() const { return portfolioExpectedShortfall_; }
+    double getPortfolioVolatility() const { return portfolioVolatility_; }
+    double getPortfolioBeta() const { return portfolioBeta_; }
+    double getConcentrationRisk() const { return concentrationRisk_; }
+    double getCorrelationRisk() const { return correlationRisk_; }
+    const std::vector<double>& getValueHistory() const { return valueHistory_; }
+    const std::map<std::string, double>& getSectorExposure() const { return sectorExposure_; }
+    double getMaxCorrelation() const { return maxCorrelation_; }
+    double getDiversificationRatio() const { return diversificationRatio_; }
+
     // Setters with validation
     void setPortfolioId(int id) { portfolioId_ = id; }
 
@@ -305,6 +452,8 @@ public:
         validateValue(value, "Total value");
         totalValue_ = value;
         updateLeverageMetrics();
+        updateValueHistory(value);
+        calculatePortfolioVolatility();
     }
 
     void setTotalPnL(double pnl) {
@@ -339,6 +488,167 @@ public:
     void setMaxDrawdownLimit(double limit) {
         validateStopLevel(limit);
         maxDrawdownLimit_ = limit;
+    }
+
+    // Advanced portfolio risk calculation methods
+private:
+    void updateValueHistory(double value) {
+        valueHistory_.push_back(value);
+        // Keep only last 100 value points for performance
+        if (valueHistory_.size() > 100) {
+            valueHistory_.erase(valueHistory_.begin());
+        }
+    }
+
+    void calculatePortfolioVolatility() {
+        if (valueHistory_.size() < 2) {
+            portfolioVolatility_ = 0.0;
+            return;
+        }
+
+        std::vector<double> returns;
+        for (size_t i = 1; i < valueHistory_.size(); ++i) {
+            double ret = (valueHistory_[i] - valueHistory_[i-1]) / valueHistory_[i-1];
+            returns.push_back(ret);
+        }
+
+        if (returns.empty()) {
+            portfolioVolatility_ = 0.0;
+            return;
+        }
+
+        double mean = std::accumulate(returns.begin(), returns.end(), 0.0) / returns.size();
+        double variance = 0.0;
+        for (double ret : returns) {
+            variance += std::pow(ret - mean, 2);
+        }
+        variance /= returns.size();
+        portfolioVolatility_ = std::sqrt(variance) * std::sqrt(365.0); // Annualized
+    }
+
+public:
+    // Advanced portfolio risk methods
+    double calculatePortfolioVaR(const std::vector<Position>& positions, double confidenceLevel = 0.05, int timeHorizon = 1) {
+        if (positions.empty() || portfolioVolatility_ <= 0.0) {
+            return 0.0;
+        }
+
+        // Using parametric VaR calculation
+        double zScore = 1.645; // 95% confidence level default
+        if (confidenceLevel <= 0.01) zScore = 2.326; // 99%
+        else if (confidenceLevel <= 0.05) zScore = 1.645; // 95%
+        else if (confidenceLevel <= 0.10) zScore = 1.282; // 90%
+
+        double dailyVol = portfolioVolatility_ / std::sqrt(365.0);
+        double timeAdjustedVol = dailyVol * std::sqrt(timeHorizon);
+
+        portfolioVaR_ = totalValue_ * zScore * timeAdjustedVol;
+        return portfolioVaR_;
+    }
+
+    double calculatePortfolioExpectedShortfall(const std::vector<Position>& positions, double confidenceLevel = 0.05, int timeHorizon = 1) {
+        double var = calculatePortfolioVaR(positions, confidenceLevel, timeHorizon);
+        portfolioExpectedShortfall_ = var * 1.25; // ES typically 25% higher than VaR
+        return portfolioExpectedShortfall_;
+    }
+
+    double calculateConcentrationRisk(const std::vector<Position>& positions) {
+        if (positions.empty()) return 0.0;
+
+        double totalValue = 0.0;
+        std::map<std::string, double> symbolExposure;
+
+        // Calculate exposure by symbol
+        for (const auto& pos : positions) {
+            double posValue = pos.getPositionValue();
+            totalValue += posValue;
+            symbolExposure[pos.getSymbol()] += posValue;
+        }
+
+        if (totalValue <= 0.0) return 0.0;
+
+        // Calculate Herfindahl-Hirschman Index (HHI) for concentration
+        double hhi = 0.0;
+        for (const auto& exposure : symbolExposure) {
+            double weight = exposure.second / totalValue;
+            hhi += weight * weight;
+        }
+
+        concentrationRisk_ = hhi; // Higher HHI = more concentrated = higher risk
+        return concentrationRisk_;
+    }
+
+    double calculateCorrelationRisk(const std::vector<Position>& positions) {
+        if (positions.size() < 2) return 0.0;
+
+        // Simple correlation risk estimate based on position overlap
+        std::map<std::string, double> sectorWeights;
+        double totalValue = 0.0;
+
+        for (const auto& pos : positions) {
+            double posValue = pos.getPositionValue();
+            totalValue += posValue;
+
+            // Simplified: treat all crypto as same sector for now
+            // In practice, you'd categorize by DeFi, Layer1, Layer2, etc.
+            sectorWeights["crypto"] += posValue;
+        }
+
+        if (totalValue <= 0.0) return 0.0;
+
+        // Calculate maximum single sector exposure as correlation proxy
+        double maxSectorWeight = 0.0;
+        for (const auto& sector : sectorWeights) {
+            double weight = sector.second / totalValue;
+            maxSectorWeight = std::max(maxSectorWeight, weight);
+        }
+
+        correlationRisk_ = maxSectorWeight; // Higher concentration = higher correlation risk
+        maxCorrelation_ = maxSectorWeight;
+        return correlationRisk_;
+    }
+
+    void calculateDiversificationRatio(const std::vector<Position>& positions) {
+        if (positions.empty()) {
+            diversificationRatio_ = 1.0;
+            return;
+        }
+
+        // Simple diversification ratio = 1 / concentration risk
+        double concentration = calculateConcentrationRisk(positions);
+        if (concentration > 0.0) {
+            diversificationRatio_ = 1.0 / concentration;
+        } else {
+            diversificationRatio_ = static_cast<double>(positions.size()); // Perfect diversification
+        }
+    }
+
+    void updateSectorExposure(const std::vector<Position>& positions) {
+        sectorExposure_.clear();
+        double totalValue = 0.0;
+
+        for (const auto& pos : positions) {
+            double posValue = pos.getPositionValue();
+            totalValue += posValue;
+            sectorExposure_["crypto"] += posValue; // Simplified sectoring
+        }
+
+        // Convert to percentages
+        if (totalValue > 0.0) {
+            for (auto& sector : sectorExposure_) {
+                sector.second = (sector.second / totalValue) * 100.0;
+            }
+        }
+    }
+
+    // Comprehensive portfolio risk update method
+    void updatePortfolioRiskMetrics(const std::vector<Position>& positions) {
+        calculatePortfolioVaR(positions);
+        calculatePortfolioExpectedShortfall(positions);
+        calculateConcentrationRisk(positions);
+        calculateCorrelationRisk(positions);
+        calculateDiversificationRatio(positions);
+        updateSectorExposure(positions);
     }
 
     // Leverage management
@@ -491,6 +801,140 @@ private:
         if (initialCapital_ > 0) {
             totalReturn_ = ((finalValue_ - initialCapital_) / initialCapital_) * 100.0;
         }
+    }
+};
+
+// Risk reporting framework
+struct RiskReport {
+    std::chrono::system_clock::time_point timestamp;
+
+    // Portfolio-level risks
+    double portfolioVaR95;
+    double portfolioVaR99;
+    double portfolioExpectedShortfall;
+    double portfolioVolatility;
+    double concentrationRisk;
+    double correlationRisk;
+    double diversificationRatio;
+
+    // Position-level risks
+    struct PositionRisk {
+        std::string symbol;
+        double positionVaR;
+        double expectedShortfall;
+        double volatility;
+        double timeDecayRisk;
+        double deltaEquivalent;
+        double maxDrawdown;
+    };
+    std::vector<PositionRisk> positionRisks;
+
+    // Risk thresholds and alerts
+    struct RiskAlert {
+        std::string alertType;
+        std::string message;
+        double severity; // 0-1, where 1 is critical
+        std::chrono::system_clock::time_point alertTime;
+    };
+    std::vector<RiskAlert> alerts;
+
+    // Risk metrics summary
+    double totalRiskScore; // Aggregate risk score 0-100
+    std::string riskLevel; // "LOW", "MEDIUM", "HIGH", "CRITICAL"
+
+    RiskReport() : timestamp(std::chrono::system_clock::now()),
+                   portfolioVaR95(0.0), portfolioVaR99(0.0),
+                   portfolioExpectedShortfall(0.0), portfolioVolatility(0.0),
+                   concentrationRisk(0.0), correlationRisk(0.0),
+                   diversificationRatio(1.0), totalRiskScore(0.0),
+                   riskLevel("LOW") {}
+
+    void generateRiskAlerts(const Portfolio& portfolio, const std::vector<Position>& positions) {
+        alerts.clear();
+
+        // Check concentration risk
+        if (concentrationRisk > 0.5) { // More than 50% in single position
+            alerts.push_back({
+                "CONCENTRATION_RISK",
+                "Portfolio heavily concentrated in single position",
+                0.8,
+                std::chrono::system_clock::now()
+            });
+        }
+
+        // Check VaR limits
+        if (portfolioVaR95 > portfolio.getTotalValue() * 0.05) { // VaR > 5% of portfolio
+            alerts.push_back({
+                "HIGH_VAR",
+                "Portfolio VaR exceeds 5% threshold",
+                0.7,
+                std::chrono::system_clock::now()
+            });
+        }
+
+        // Check margin utilization
+        if (portfolio.getMarginUtilization() > 0.8) { // >80% margin used
+            alerts.push_back({
+                "HIGH_MARGIN_USAGE",
+                "Margin utilization exceeds 80%",
+                0.9,
+                std::chrono::system_clock::now()
+            });
+        }
+
+        // Check position-specific risks
+        for (const auto& pos : positions) {
+            if (pos.getVolatility() > 1.0) { // Annualized volatility > 100%
+                alerts.push_back({
+                    "HIGH_VOLATILITY",
+                    "Position " + pos.getSymbol() + " has high volatility",
+                    0.6,
+                    std::chrono::system_clock::now()
+                });
+            }
+
+            if (pos.isStopLossTriggered()) {
+                alerts.push_back({
+                    "STOP_LOSS_TRIGGERED",
+                    "Stop loss triggered for " + pos.getSymbol(),
+                    1.0,
+                    std::chrono::system_clock::now()
+                });
+            }
+        }
+
+        calculateTotalRiskScore();
+    }
+
+    void calculateTotalRiskScore() {
+        // Simple risk scoring algorithm (0-100)
+        double score = 0.0;
+
+        // Concentration risk (0-30 points)
+        score += std::min(30.0, concentrationRisk * 60.0);
+
+        // VaR risk (0-25 points)
+        if (portfolioVaR95 > 0) {
+            score += std::min(25.0, (portfolioVaR95 / 0.1) * 25.0); // Normalized to 10% VaR
+        }
+
+        // Volatility risk (0-20 points)
+        score += std::min(20.0, portfolioVolatility * 10.0);
+
+        // Alert severity (0-25 points)
+        double maxAlertSeverity = 0.0;
+        for (const auto& alert : alerts) {
+            maxAlertSeverity = std::max(maxAlertSeverity, alert.severity);
+        }
+        score += maxAlertSeverity * 25.0;
+
+        totalRiskScore = std::min(100.0, score);
+
+        // Determine risk level
+        if (totalRiskScore < 25.0) riskLevel = "LOW";
+        else if (totalRiskScore < 50.0) riskLevel = "MEDIUM";
+        else if (totalRiskScore < 75.0) riskLevel = "HIGH";
+        else riskLevel = "CRITICAL";
     }
 };
 
