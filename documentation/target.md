@@ -88,25 +88,129 @@ liquidate [--symbol SYMBOL] [--pair PAIR_ID]
 - `--pair`: Liquidate specific trading pair
 **Output:** Liquidation execution status, realized P&L impact
 
-#### Historical Testing
+#### Historical Testing & Simulation
+
+##### Full Backtesting Engine
 ```
-backtest --start DATE --end DATE [--parameters PARAM_FILE]
+backtest --mode full --start DATE --end DATE --initial-capital AMOUNT [--parameters PARAM_FILE] [--thresholds THRESHOLD_PROFILE]
 ```
-**Purpose:** Run historical performance simulation
+**Purpose:** Comprehensive historical trading simulation with virtual portfolio management
 **Parameters:**
+- `--mode full`: Execute complete trading simulation (default: statistical only)
+- `--start`: Backtest start date (YYYY-MM-DD format)
+- `--end`: Backtest end date (YYYY-MM-DD format)
+- `--initial-capital`: Starting virtual capital amount (required for full mode)
+- `--parameters`: Custom algorithm parameter configuration file
+- `--thresholds`: Testing threshold profile (conservative|moderate|aggressive|custom)
+**Features:**
+- Virtual portfolio with exact historical data replay
+- Realistic order execution with slippage and fee simulation
+- Position tracking identical to live trading engine
+- Risk management validation under historical conditions
+**Output:** Comprehensive performance report including:
+- Sharpe ratio, maximum drawdown, volatility metrics
+- Trade-by-trade execution log with P&L attribution
+- Risk metrics evolution over testing period
+- Portfolio allocation and rebalancing history
+
+```
+backtest --mode statistical --start DATE --end DATE [--parameters PARAM_FILE]
+```
+**Purpose:** Statistical performance analysis without full trading simulation
+**Parameters:**
+- `--mode statistical`: Run statistical analysis only (faster execution)
 - `--start`: Backtest start date (YYYY-MM-DD format)
 - `--end`: Backtest end date (YYYY-MM-DD format)
 - `--parameters`: Custom parameter configuration file
-**Output:** Historical performance metrics, drawdown analysis, trade statistics
+**Output:** Statistical performance metrics, signal analysis, prediction accuracy
 
 ```
-walk-forward --periods NUM --window DAYS
+walk-forward --periods NUM --window DAYS [--initial-capital AMOUNT]
 ```
-**Purpose:** Execute walk-forward analysis for model validation
+**Purpose:** Walk-forward analysis for robust model validation
 **Parameters:**
 - `--periods`: Number of forward periods to test
-- `--window`: Rolling window size for each period
-**Output:** Out-of-sample performance metrics, model stability analysis
+- `--window`: Rolling window size for each period (days)
+- `--initial-capital`: Virtual capital for trading simulation (optional)
+**Output:** Out-of-sample performance metrics, model stability analysis, parameter drift detection
+
+##### Real-Time Test Mode
+```
+set-mode test
+```
+**Purpose:** Switch entire system to test/paper trading mode
+**Features:**
+- Live data feeds with virtual trading execution
+- Identical monitoring, alerts, and diagnostics as live mode
+- Virtual balance and position management
+- Clear UI indicators showing "TEST MODE ACTIVE"
+- All risk management systems active but non-binding
+**Output:** Test mode activation confirmation, virtual portfolio initialization
+
+```
+set-mode live
+```
+**Purpose:** Switch to live trading mode (requires confirmation)
+**Safety:** Requires explicit confirmation and production readiness validation
+**Output:** Live mode activation confirmation, real portfolio status
+
+```
+get-mode
+```
+**Purpose:** Display current system mode (test/live) and virtual portfolio status
+**Output:** Current mode, virtual/real balance, active positions, mode duration
+
+##### Paper Trading Operations
+```
+paper-trade --duration DAYS [--parallel true]
+```
+**Purpose:** Execute paper trading for specified duration
+**Parameters:**
+- `--duration`: Paper trading duration in days
+- `--parallel true`: Run paper trading alongside live trading (comparison mode)
+**Features:**
+- Real-time strategy execution with virtual capital
+- Performance comparison with live trading (if parallel)
+- Risk validation in safe environment
+- Strategy parameter optimization
+**Output:** Paper trading session results, performance vs live comparison
+
+##### Testing Threshold Management
+```
+show-thresholds [--category CATEGORY] [--profile PROFILE]
+```
+**Purpose:** Display current testing threshold configuration
+**Parameters:**
+- `--category`: Filter by category (all|performance|reliability|execution|crypto)
+- `--profile`: Show thresholds for specific profile (conservative|moderate|aggressive|custom)
+**Output:** Current threshold values with configurable ranges and active profile
+
+```
+set-threshold --metric METRIC_NAME --value VALUE [--profile PROFILE_NAME]
+```
+**Purpose:** Configure individual testing threshold values
+**Parameters:**
+- `--metric`: Threshold metric name (e.g., sharpe_ratio, max_drawdown, uptime_requirement)
+- `--value`: New threshold value (within configurable range)
+- `--profile`: Target profile to modify (default: active profile)
+**Output:** Threshold update confirmation, validation status
+
+```
+load-profile --name PROFILE_NAME [--environment ENVIRONMENT]
+```
+**Purpose:** Load pre-defined or custom threshold profile
+**Parameters:**
+- `--name`: Profile name (conservative|moderate|aggressive|custom_name)
+- `--environment`: Target environment (staging|production|testing)
+**Output:** Profile activation confirmation, threshold summary
+
+```
+validate-thresholds [--profile PROFILE_NAME]
+```
+**Purpose:** Validate threshold configuration consistency and feasibility
+**Parameters:**
+- `--profile`: Profile to validate (default: active profile)
+**Output:** Validation results, inconsistency warnings, feasibility assessment
 
 ### System Monitoring Commands
 
