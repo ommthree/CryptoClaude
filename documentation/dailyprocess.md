@@ -145,6 +145,68 @@ This document defines the standard daily development workflow for the CryptoClau
 3. Validator re-runs applicable portions of validation
 4. Process repeats until validation approvals obtained
 
+### Stage 6.5: Git Commit and Version Control (Developer)
+
+#### Commit Authorization
+**Trigger:** All validations approved and Project Owner approval obtained
+**Responsibility:** Developer
+**Process:**
+1. Stage all daily deliverables and changes using `git add`
+2. Review staged changes with `git status` and `git diff --staged`
+3. Create comprehensive commit message following project standards
+4. Execute git commit with detailed description of daily achievements
+
+#### Commit Message Standards
+**Required Format:**
+```
+🚀 [Week X, Day Y] COMPLETE: [Brief Achievement Summary]
+
+## [Primary Achievement Category]
+### ✅ [Specific Deliverable 1] - [Status]
+- [Key implementation detail]
+- [Key implementation detail]
+
+### ✅ [Specific Deliverable 2] - [Status]
+- [Key implementation detail]
+- [Key implementation detail]
+
+## [Secondary Achievement Category]
+- [Achievement summary]
+- [Achievement summary]
+
+## Validation Results
+- ✅ [Validation type]: [Status/Result]
+- ✅ [Success criteria]: [Status/Result]
+
+## Implementation Statistics
+- [File counts, lines of code, etc.]
+
+🔧 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+#### Commit Best Practices
+**Requirements:**
+1. **Comprehensive Scope:** Include all daily deliverables in single logical commit
+2. **Clear Attribution:** Document what was achieved and why it matters
+3. **Validation Evidence:** Reference validation approvals obtained
+4. **Progress Tracking:** Quantify implementation progress made
+5. **Professional Standards:** Maintain consistent commit message quality
+
+**Quality Gates:**
+- All staged changes reviewed and intentional
+- Commit message accurately reflects daily achievements
+- No sensitive information or temporary files included
+- Repository remains in clean, deployable state
+
+#### Post-Commit Verification
+**Process:**
+1. Verify commit completed successfully with `git status`
+2. Confirm working directory is clean
+3. Validate commit message and content with `git show --name-status`
+4. Update commit hash in daily documentation if required
+
 ### Stage 7: Progress Documentation (Developer + SDM)
 
 #### Developer Updates
@@ -190,6 +252,7 @@ This document defines the standard daily development workflow for the CryptoClau
 - [ ] Integration tests pass for component interfaces
 - [ ] Validator approves technical implementation
 - [ ] Project Owner approves component completion
+- [ ] Git commit completed with comprehensive documentation
 
 ### Algorithm Changes:
 - [ ] Algorithm modification properly implemented
@@ -199,6 +262,7 @@ This document defines the standard daily development workflow for the CryptoClau
 - [ ] TRS approves algorithm correctness
 - [ ] Validator approves technical integration
 - [ ] Project Owner approves algorithm change
+- [ ] Git commit completed with comprehensive documentation
 
 ### Documentation Updates:
 - [ ] Required documentation updated and accurate
@@ -206,6 +270,7 @@ This document defines the standard daily development workflow for the CryptoClau
 - [ ] Planning documents updated with progress
 - [ ] Success criteria properly marked
 - [ ] SDM approves documentation completeness
+- [ ] Git commit completed with comprehensive documentation
 
 ## Quality Gates
 
@@ -213,7 +278,9 @@ This document defines the standard daily development workflow for the CryptoClau
 1. Code compilation success
 2. Basic smoke tests passing
 3. Validator technical approval
-4. SDM progress documentation completion
+4. Project Owner approval (when applicable)
+5. Git commit completed with comprehensive documentation
+6. SDM progress documentation completion
 
 ### Conditional Gates (When Applicable):
 1. TRS algorithm approval (for algorithm changes)
