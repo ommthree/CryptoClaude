@@ -1,4 +1,6 @@
 #include "DatabaseManager.h"
+#include "MigrationManager.h"
+#include "DataQualityManager.h"
 #include "../../Configuration/Config.h"
 #include <iostream>
 #include <sstream>
@@ -33,11 +35,19 @@ bool DatabaseManager::initialize(const std::string& dbPath) {
     // Enable foreign key support
     executeQuery("PRAGMA foreign_keys = ON;");
 
+    // Initialize enhancement managers
+    m_migrationManager = std::make_unique<MigrationManager>(*this);
+    m_dataQualityManager = std::make_unique<DataQualityManager>(*this);
+
     // Create tables if they don't exist
     return createTables();
 }
 
 void DatabaseManager::close() {
+    // Clean up enhancement managers before closing database
+    m_dataQualityManager.reset();
+    m_migrationManager.reset();
+
     if (m_db) {
         sqlite3_close(m_db);
         m_db = nullptr;
@@ -429,6 +439,48 @@ bool DatabaseManager::dropAllTables() {
         }
     }
     return true;
+}
+
+// Enhanced database management methods (VE005, VE004)
+bool DatabaseManager::initializeWithMigrations(const std::string& dbPath) {
+    if (!initialize(dbPath)) {
+        return false;
+    }
+
+    // Initialize migration system
+    if (!m_migrationManager->initialize()) {
+        std::cerr << "Failed to initialize migration manager" << std::endl;
+        return false;
+    }
+
+    // Run any pending migrations
+    if (!m_migrationManager->runMigrations()) {
+        std::cerr << "Failed to run database migrations" << std::endl;
+        return false;
+    }
+
+    // Initialize data quality system
+    if (!m_dataQualityManager->initialize()) {
+        std::cerr << "Failed to initialize data quality manager" << std::endl;
+        return false;
+    }
+
+    std::cout << "Database initialized with migrations and quality management" << std::endl;
+    return true;
+}
+
+MigrationManager& DatabaseManager::getMigrationManager() {
+    if (!m_migrationManager) {
+        throw std::runtime_error("MigrationManager not initialized");
+    }
+    return *m_migrationManager;
+}
+
+DataQualityManager& DatabaseManager::getDataQualityManager() {
+    if (!m_dataQualityManager) {
+        throw std::runtime_error("DataQualityManager not initialized");
+    }
+    return *m_dataQualityManager;
 }
 
 // StatementWrapper implementation

@@ -1,0 +1,384 @@
+# CryptoClaude Target State Specification
+
+## Overview
+This document defines the target functionality for the CryptoClaude trading platform, specifying user interface capabilities, system outputs, and operational requirements for the complete trading system.
+
+## System Architecture Overview
+
+### Deployment Environment
+**Primary Platform:** AWS Lightsail instance for 24/7 operation
+**Local Interface:** Desktop application interface for monitoring and control
+**Data Storage:** Local SQLite database with comprehensive historical retention
+**Connectivity:** Real-time API connections to CryptoCompare and CryptoNews API
+
+### Core System Components
+1. **Trading Engine:** Automated long-short pair trading execution
+2. **Prediction Model:** Random Forest with sentiment analysis and technical factors
+3. **Risk Management:** Real-time portfolio and pair-level risk monitoring
+4. **Data Pipeline:** Continuous market and news data ingestion
+5. **Reporting System:** Comprehensive performance and risk analytics
+6. **Console Interface:** Command-line interface for system control and monitoring
+
+## Console Interface Functionality
+
+### System Control Commands
+
+#### Model Calibration and Training
+```
+calibrate tree [--symbols SYMBOL_LIST] [--timeframe DAYS]
+```
+**Purpose:** Calibrate the Random Forest prediction model
+**Parameters:**
+- `--symbols`: Specific coin list for calibration (default: all eligible)
+- `--timeframe`: Historical data window for training (default: 90 days)
+**Output:** Model performance metrics, feature importance analysis, calibration status
+
+```
+calibrate gamma [--symbol SYMBOL] [--window DAYS]
+```
+**Purpose:** Calibrate per-coin gamma factors for liquidity adjustment
+**Parameters:**
+- `--symbol`: Specific coin for gamma calibration (default: all coins)
+- `--window`: Calibration window in days (default: 30 days)
+**Output:** Gamma factor values, stability metrics, confidence intervals
+
+#### Parameter Management
+```
+set parameter PARAMETER_NAME VALUE
+```
+**Purpose:** Modify tunable algorithm parameters
+**Examples:**
+- `set parameter max_coin_concentration 7.5`
+- `set parameter min_rebalance_interval 6.0`
+**Output:** Parameter confirmation, validation status, impact assessment
+
+```
+get parameter [PARAMETER_NAME]
+```
+**Purpose:** Display current parameter values
+**Output:** Current parameter values, ranges, and last modification timestamps
+
+```
+reset parameters [--category CATEGORY]
+```
+**Purpose:** Reset parameters to default values
+**Parameters:**
+- `--category`: Specific parameter category (risk, rebalancing, etc.)
+**Output:** Reset confirmation and new parameter values
+
+#### Trading Control
+```
+trading on
+```
+**Purpose:** Enable automated trading execution
+**Output:** Trading activation confirmation, current portfolio status
+
+```
+trading off
+```
+**Purpose:** Disable automated trading execution
+**Output:** Trading suspension confirmation, pending orders status
+
+```
+liquidate [--symbol SYMBOL] [--pair PAIR_ID]
+```
+**Purpose:** Force liquidation of positions
+**Parameters:**
+- `--symbol`: Liquidate specific coin positions
+- `--pair`: Liquidate specific trading pair
+**Output:** Liquidation execution status, realized P&L impact
+
+#### Historical Testing
+```
+backtest --start DATE --end DATE [--parameters PARAM_FILE]
+```
+**Purpose:** Run historical performance simulation
+**Parameters:**
+- `--start`: Backtest start date (YYYY-MM-DD format)
+- `--end`: Backtest end date (YYYY-MM-DD format)
+- `--parameters`: Custom parameter configuration file
+**Output:** Historical performance metrics, drawdown analysis, trade statistics
+
+```
+walk-forward --periods NUM --window DAYS
+```
+**Purpose:** Execute walk-forward analysis for model validation
+**Parameters:**
+- `--periods`: Number of forward periods to test
+- `--window`: Rolling window size for each period
+**Output:** Out-of-sample performance metrics, model stability analysis
+
+### System Monitoring Commands
+
+#### Real-Time Status
+```
+status
+```
+**Purpose:** Display comprehensive system status
+**Output:**
+- Trading engine status (active/inactive)
+- Current portfolio composition and allocation
+- Active trading pairs and performance
+- Data feed connectivity status
+- Risk metrics and alerts
+- System health indicators
+
+```
+positions
+```
+**Purpose:** Display detailed position information
+**Output:**
+- Current positions by coin and pair
+- Position sizes, entry prices, current P&L
+- Risk metrics per position and pair
+- Time since position inception
+
+```
+portfolio
+```
+**Purpose:** Display portfolio-level information
+**Output:**
+- Total portfolio value and cash allocation
+- Overall P&L (daily, weekly, monthly)
+- Portfolio risk metrics (VaR, drawdown, volatility)
+- Concentration metrics and diversification status
+
+#### Performance Reporting
+```
+performance [--period PERIOD] [--format FORMAT]
+```
+**Purpose:** Generate performance reports
+**Parameters:**
+- `--period`: daily/weekly/monthly/yearly/all
+- `--format`: console/csv/json
+**Output:**
+- Return metrics by specified period
+- Risk-adjusted performance (Sharpe ratio, Sortino ratio)
+- Maximum drawdown analysis
+- Trade statistics and win rate
+
+```
+attribution [--timeframe DAYS]
+```
+**Purpose:** Performance attribution analysis
+**Parameters:**
+- `--timeframe`: Analysis window in days (default: 30)
+**Output:**
+- Return decomposition by pair
+- Alpha vs beta attribution
+- Transaction cost impact
+- Model prediction accuracy assessment
+
+#### Risk Monitoring
+```
+risk
+```
+**Purpose:** Current risk assessment
+**Output:**
+- Portfolio VaR at multiple confidence levels
+- Individual pair risk contributions
+- Correlation matrix for active pairs
+- Risk budget utilization
+- Current vs target risk allocation
+
+```
+alerts [--severity LEVEL]
+```
+**Purpose:** Display active risk alerts
+**Parameters:**
+- `--severity`: info/warning/error/critical
+**Output:**
+- Active risk alerts by severity
+- Alert timestamps and descriptions
+- Recommended actions for each alert
+
+#### Data Quality Monitoring
+```
+data status
+```
+**Purpose:** Data feed and quality status
+**Output:**
+- CryptoCompare API connectivity and latency
+- CryptoNews API connectivity and article counts
+- Data completeness metrics by symbol
+- Recent data quality alerts
+- Data provider backup status
+
+```
+data gaps [--days DAYS]
+```
+**Purpose:** Identify data gaps and quality issues
+**Parameters:**
+- `--days`: Lookback period for gap analysis (default: 7)
+**Output:**
+- Missing data periods by symbol and data type
+- Data quality score by symbol
+- Recommended actions for data issues
+
+### Advanced Analytics Commands
+
+#### Model Diagnostics
+```
+model performance
+```
+**Purpose:** Model prediction accuracy assessment
+**Output:**
+- Prediction vs actual performance correlation
+- Model feature importance rankings
+- Recent model performance trends
+- Recommended model retraining schedule
+
+```
+model features [--symbol SYMBOL]
+```
+**Purpose:** Feature analysis and importance
+**Parameters:**
+- `--symbol`: Symbol-specific feature analysis
+**Output:**
+- Current feature values by symbol
+- Feature importance weights
+- Feature stability over time
+- News source quality scores
+
+#### Market Analysis
+```
+market sentiment [--timeframe HOURS]
+```
+**Purpose:** Current market sentiment analysis
+**Parameters:**
+- `--timeframe`: Sentiment analysis window (default: 24 hours)
+**Output:**
+- Sentiment scores by symbol and news source quality
+- Sentiment trend analysis
+- News volume and coverage metrics
+- Sentiment-based trading signals
+
+```
+pairs analysis
+```
+**Purpose:** Trading pair analysis and optimization
+**Output:**
+- Current pair performance and correlation
+- Pair selection rationale and confidence scores
+- Alternative pair recommendations
+- Pair rebalancing recommendations
+
+## System Outputs and Reporting
+
+### Automated Reports
+
+#### Daily Performance Summary (End of Day)
+**Content:**
+- Daily portfolio return and attribution
+- New positions opened and closed
+- Risk metrics update
+- Data quality assessment
+- Trading cost summary including API licensing costs
+
+#### Weekly Comprehensive Report
+**Content:**
+- Weekly performance vs benchmark and targets
+- Risk analysis with VaR and drawdown metrics
+- Model performance and prediction accuracy
+- Data quality metrics and provider statistics
+- Parameter optimization recommendations
+
+#### Monthly Strategic Review
+**Content:**
+- Monthly performance attribution analysis
+- Model effectiveness and feature importance evolution
+- Risk management effectiveness assessment
+- Trading cost analysis and optimization opportunities
+- Strategic parameter adjustment recommendations
+
+### Real-Time Monitoring Outputs
+
+#### Hourly Risk Reports (if enabled)
+**Content:**
+- Current portfolio risk metrics
+- Position-level risk attribution
+- Real-time P&L and drawdown monitoring
+- Active risk alerts and recommended actions
+- Data feed health status
+
+#### Trade Execution Reports (Real-Time)
+**Content:**
+- Trade execution details with timestamps
+- Trade rationale and model confidence scores
+- Execution quality metrics (slippage, timing)
+- Post-trade risk impact assessment
+- Running trading cost accumulation
+
+### Alert and Notification System
+
+#### Risk Alerts
+- Portfolio stop-loss threshold breaches
+- Individual pair risk limit violations
+- Unusual correlation or volatility spikes
+- Model prediction confidence degradation
+
+#### Operational Alerts
+- Data feed interruptions or quality degradation
+- API rate limit approaches or violations
+- System performance or connectivity issues
+- Model retraining requirements
+
+#### Performance Alerts
+- Significant deviation from expected returns
+- Unusual trading cost accumulation
+- Benchmark underperformance beyond thresholds
+- Cash buffer depletion or excess accumulation
+
+## System Operational Requirements
+
+### Data Management
+**Historical Data Retention:** Complete retention of all market data, news data, predictions, and trading history
+**Data Quality Monitoring:** Continuous monitoring for missing data, implausible values, stale data, and provider issues
+**Backup and Recovery:** Automated database backup with point-in-time recovery capability
+
+### Performance Requirements
+**Response Time:** Console commands respond within 2 seconds for status queries, 30 seconds for complex analytics
+**System Availability:** 99.5% uptime target with graceful degradation during data provider outages
+**Data Latency:** Market data processing within 5 minutes of availability, news sentiment within 15 minutes
+
+### Integration Requirements
+**API Management:** Robust handling of rate limits, authentication, and failover for data providers
+**Database Performance:** Efficient query processing for large historical datasets
+**Monitoring Integration:** Health monitoring compatible with AWS CloudWatch and standard monitoring tools
+
+### Security and Compliance
+**API Key Management:** Secure storage and rotation of third-party API credentials
+**Data Protection:** Encrypted storage of sensitive configuration and trading data
+**Access Control:** Role-based access control for console commands and system modification
+**Audit Trail:** Complete logging of all system actions, parameter changes, and trade decisions
+
+## User Experience Requirements
+
+### Console Interface Standards
+**Command Syntax:** Consistent, intuitive command structure with comprehensive help system
+**Output Formatting:** Clear, readable output with appropriate precision for financial data
+**Error Handling:** Informative error messages with suggested corrective actions
+**Command History:** Complete command history with search and recall capabilities
+
+### Remote Access Capability
+**Local Interface:** Desktop application for secure access to Lightsail instance
+**Session Management:** Secure authentication and session management for remote access
+**Data Synchronization:** Real-time synchronization of system status and reports
+**Network Resilience:** Graceful handling of network interruptions and reconnection
+
+### Documentation and Help
+**Inline Help:** Comprehensive help system accessible via console commands
+**Parameter Documentation:** Dynamic help showing current parameter values and acceptable ranges
+**Example Library:** Built-in examples for complex commands and analysis scenarios
+**Error Resolution:** Context-sensitive help for error conditions and system issues
+
+---
+
+**Target State Status:** Complete specification - Ready for Project Owner Approval
+**Dependencies:** Algorithm specification (approved), database schema (pending)
+**Implementation Priority:** Core console interface and trading control functionality first
+
+*Document Owner: SDM*
+*Approval Authority: Project Owner*
+*Created: Setup Phase*
+*Modification Rights: Project Owner Only*

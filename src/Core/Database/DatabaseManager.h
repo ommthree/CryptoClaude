@@ -7,6 +7,9 @@
 namespace CryptoClaude {
 namespace Database {
 
+class MigrationManager;
+class DataQualityManager;
+
 class DatabaseManager {
 public:
     static DatabaseManager& getInstance();
@@ -33,6 +36,14 @@ public:
     bool dropAllTables();
     bool tableExists(const std::string& tableName);
 
+    // Enhanced database management (VE005, VE004)
+    bool initializeWithMigrations(const std::string& dbPath);
+    MigrationManager& getMigrationManager();
+    DataQualityManager& getDataQualityManager();
+
+    // Direct SQLite access for migrations
+    sqlite3* getSqliteHandle() { return m_db; }
+
 private:
     DatabaseManager() = default;
     ~DatabaseManager();
@@ -43,6 +54,10 @@ private:
     sqlite3* m_db = nullptr;
     std::string m_lastError;
     bool m_isConnected = false;
+
+    // Enhancement managers
+    std::unique_ptr<MigrationManager> m_migrationManager;
+    std::unique_ptr<DataQualityManager> m_dataQualityManager;
 
     bool createMarketDataTables();
     bool createSentimentTables();
