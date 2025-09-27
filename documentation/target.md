@@ -228,13 +228,153 @@ paper-trade --duration DAYS [--parallel true]
 - Strategy parameter optimization
 **Output:** Paper trading session results, performance vs live comparison
 
+#### Model & Strategy Parameter Management ✅ **NEW COMPREHENSIVE FRAMEWORK**
+
+##### Random Forest Model Parameters
+```
+rf-params [--show|--set|--autotune] [--param PARAM_NAME] [--value VALUE]
+```
+**Purpose:** Configure or autotune Random Forest model parameters
+**Parameters:**
+- `--show`: Display current Random Forest configuration
+- `--set --param PARAM_NAME --value VALUE`: Manually set specific parameter
+- `--autotune`: Automatically optimize all parameters using historical data
+**Key Parameters:**
+- `n_estimators`: Number of trees (default: 100, range: 50-500)
+- `max_depth`: Maximum tree depth (default: 10, range: 3-20)
+- `min_samples_split`: Minimum samples to split (default: 5, range: 2-20)
+- `min_samples_leaf`: Minimum samples per leaf (default: 2, range: 1-10)
+- `max_features`: Features per split (default: 'sqrt', options: 'sqrt', 'log2', 'auto')
+- `bootstrap`: Bootstrap sampling (default: true)
+**Output:** Current parameters, performance metrics, autotune results
+
+##### Liquidity & Market Impact Parameters
+```
+liquidity-params [--show|--calibrate|--set] [--coin SYMBOL] [--param PARAM_NAME] [--value VALUE]
+```
+**Purpose:** Configure liquidity and market impact parameters per coin
+**Parameters:**
+- `--show [--coin SYMBOL]`: Display liquidity parameters (all coins or specific)
+- `--calibrate`: Auto-calculate optimal liquidity parameters from historical data
+- `--set --coin SYMBOL --param PARAM_NAME --value VALUE`: Set specific parameter
+**Key Parameters (per coin):**
+- `price_impact_coeff`: Inflow to price change coefficient (auto-calculated)
+- `slippage_factor`: Expected slippage percentage (default: 0.1%, range: 0.05%-0.5%)
+- `min_order_size`: Minimum order size in USD (default: $100, range: $10-$1000)
+- `max_order_size`: Maximum single order size (default: 5% of daily volume)
+- `execution_delay`: Expected execution time in seconds (default: 30s, range: 10s-300s)
+**Output:** Per-coin liquidity parameters, calibration results, market impact estimates
+
+##### Concentration & Risk Parameters
+```
+concentration-params [--show|--set|--optimize] [--param PARAM_NAME] [--value VALUE]
+```
+**Purpose:** Configure portfolio concentration and risk management parameters
+**Parameters:**
+- `--show`: Display current concentration settings
+- `--set --param PARAM_NAME --value VALUE`: Set specific concentration parameter
+- `--optimize`: Optimize concentration parameters through backtesting
+**Key Parameters:**
+- `volatility_factor`: Volatility weighting factor (default: 0.94, range: 0.8-0.99)
+- `max_position_pct`: Maximum position percentage (default: 20%, range: 5%-35%)
+- `concentration_threshold`: Rebalancing trigger threshold (default: 5%, range: 1%-10%)
+- `correlation_penalty`: High correlation position penalty (default: 1.5x, range: 1.0x-3.0x)
+- `volatility_scaling`: Volatility-based position scaling (default: true)
+**Output:** Concentration settings, risk metrics, optimization results
+
+##### Rebalancing & Strategy Parameters
+```
+strategy-params [--show|--set|--optimize] [--param PARAM_NAME] [--value VALUE]
+```
+**Purpose:** Configure trading strategy and rebalancing parameters
+**Parameters:**
+- `--show`: Display current strategy configuration
+- `--set --param PARAM_NAME --value VALUE`: Set specific strategy parameter
+- `--optimize`: Auto-optimize strategy parameters through backtesting
+**Key Parameters:**
+- `rebalance_frequency`: Rebalancing frequency in hours (default: 24h, range: 1h-168h)
+- `signal_threshold`: Minimum signal strength to trade (default: 0.6, range: 0.5-0.8)
+- `prediction_horizon`: Prediction time horizon in hours (default: 24h, range: 4h-72h)
+- `momentum_factor`: Momentum weighting factor (default: 0.3, range: 0.0-0.7)
+- `mean_reversion_factor`: Mean reversion factor (default: 0.2, range: 0.0-0.5)
+- `transaction_cost`: Transaction cost assumption (default: 0.1%, range: 0.05%-0.25%)
+**Output:** Strategy parameters, backtest results, optimization metrics
+
+##### Automated Parameter Optimization
+```
+autotune-all [--mode OPTIMIZATION_MODE] [--duration BACKTEST_PERIOD] [--objective OBJECTIVE_FUNCTION]
+```
+**Purpose:** Automatically optimize all parameters through comprehensive backtesting
+**Parameters:**
+- `--mode`: Optimization mode (conservative|balanced|aggressive|custom)
+- `--duration`: Backtesting period in days (default: 365, range: 90-730)
+- `--objective`: Optimization objective (sharpe|return|drawdown|profit_factor)
+**Process:**
+1. Random Forest parameter optimization using cross-validation
+2. Liquidity parameter calibration from market data
+3. Concentration parameter optimization through Monte Carlo
+4. Strategy parameter grid search optimization
+**Output:** Optimized parameter set, performance comparison, confidence intervals
+
+##### One-Click Backtesting Engine
+```
+backtest-optimize --parameters ALL|RF|LIQUIDITY|CONCENTRATION|STRATEGY [--duration DAYS] [--runs MONTE_CARLO_RUNS]
+```
+**Purpose:** Run automated backtesting to find optimal parameter combinations
+**Parameters:**
+- `--parameters`: Which parameter groups to optimize
+- `--duration`: Historical period for backtesting (default: 365 days)
+- `--runs`: Monte Carlo simulation runs (default: 1000)
+**Features:**
+- Grid search across parameter combinations
+- Monte Carlo simulation for robustness testing
+- Walk-forward analysis for temporal stability
+- Multi-objective optimization (return vs risk)
+**Output:** Best parameter combinations, performance metrics, robustness analysis
+
+##### News Source & Sentiment Management
+```
+news-sources --show|--configure|--test [--source NEWSAPI|CRYPTONEWSAPI] [--status]
+```
+**Purpose:** Manage dual news source integration for sentiment analysis
+**Parameters:**
+- `--show`: Display current news source configuration and status
+- `--configure`: Set up API keys and rate limits for news providers
+- `--test`: Test connectivity and data quality for news sources
+- `--source`: Specify which news source to manage (NewsAPI or CryptoNewsAPI)
+**Features:**
+- Dual news source integration (NewsAPI + CryptoNewsAPI)
+- Automatic sentiment score aggregation to hourly intervals
+- News volume momentum tracking with rate limit management
+- Source agreement correlation analysis
+- Incremental data harvesting with smart API rate limit management
+**Output:** News source status, sentiment score samples, data quality metrics, API usage statistics
+
+```
+sentiment-features --show|--calibrate|--validate [--timeframe HOURLY|DAILY] [--coins SYMBOL_LIST]
+```
+**Purpose:** Manage enhanced sentiment features for Random Forest model
+**Parameters:**
+- `--show`: Display current sentiment feature values and trends
+- `--calibrate`: Calibrate sentiment scoring algorithms with market data
+- `--validate`: Test sentiment feature predictive power
+- `--timeframe`: Data aggregation timeframe (default: hourly)
+- `--coins`: Specific cryptocurrency symbols to analyze
+**Features:**
+- 5 enhanced sentiment features: general_news, crypto_news, source_agreement, crypto_impact, volume_momentum
+- Integration with 15 Claude AI features for comprehensive sentiment analysis
+- Hourly data calibration for optimal model training
+- Cryptocurrency-specific sentiment scoring with incremental harvesting
+- Phased data collection (top 10 → top 20 → all 48 coins)
+**Output:** Sentiment feature values, correlation analysis, predictive power metrics, collection progress
+
 ##### Testing Threshold Management
 ```
 show-thresholds [--category CATEGORY] [--profile PROFILE]
 ```
 **Purpose:** Display current testing threshold configuration
 **Parameters:**
-- `--category`: Filter by category (all|performance|reliability|execution|crypto)
+- `--category`: Filter by category (all|performance|reliability|execution|crypto|parameters)
 - `--profile`: Show thresholds for specific profile (conservative|moderate|aggressive|custom)
 **Output:** Current threshold values with configurable ranges and active profile
 
@@ -243,7 +383,7 @@ set-threshold --metric METRIC_NAME --value VALUE [--profile PROFILE_NAME]
 ```
 **Purpose:** Configure individual testing threshold values
 **Parameters:**
-- `--metric`: Threshold metric name (e.g., sharpe_ratio, max_drawdown, uptime_requirement)
+- `--metric`: Threshold metric name (e.g., sharpe_ratio, max_drawdown, rf_accuracy, prediction_confidence)
 - `--value`: New threshold value (within configurable range)
 - `--profile`: Target profile to modify (default: active profile)
 **Output:** Threshold update confirmation, validation status
