@@ -9,10 +9,7 @@
 #include <chrono>
 #include <map>
 
-// Forward declaration for JSON
-namespace nlohmann {
-    class json;
-}
+#include <nlohmann/json.hpp>
 
 namespace CryptoClaude {
 namespace Data {

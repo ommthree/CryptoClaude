@@ -71,7 +71,7 @@ This document defines the comprehensive weekly review and planning cycle for the
 7. Test Visual Studio project compilation and debugging capability
 
 #### Validation Reporting
-**Output:** validation.md (weekly comprehensive review)
+**Output:** week#validation.md (weekly comprehensive review)
 **Contents:**
 1. **Technical Assessment Summary**
    - Overall system health status
@@ -102,25 +102,40 @@ This document defines the comprehensive weekly review and planning cycle for the
 
 #### TRS Review Scope
 **Trigger:** Weekly comprehensive review (always executed)
+**⚠️ CRITICAL:** Updated based on three-agent analysis to include regulatory compliance gates
+
+**MANDATORY REGULATORY COMPLIANCE GATES:**
+1. **Real Correlation Validation Gate**
+   - ❌ **AUTOMATIC FAIL**: Any simulated or random correlation values
+   - ✅ **PASS CRITERIA**: Real algorithm predictions vs actual market outcomes with r ≥ 0.85 and p < 0.05
+
+2. **Algorithm Implementation Verification Gate**
+   - ❌ **AUTOMATIC FAIL**: Framework-only or placeholder implementation
+   - ✅ **PASS CRITERIA**: Complete trading algorithm with actual market signal processing
+
+3. **Historical Data Completeness Gate**
+   - ❌ **AUTOMATIC FAIL**: Less than 2 years historical data or <98% completeness
+   - ✅ **PASS CRITERIA**: Minimum 730 trading days with verified data quality
+
 **Focus Areas:**
 
-1. **Algorithm Performance Analysis**
-   - Trading logic effectiveness assessment
-   - Portfolio allocation optimization review
-   - Risk-return profile evaluation
-   - Market condition adaptability analysis
+1. **Algorithm Performance Analysis** ⚠️ **ENHANCED WITH REAL VALIDATION**
+   - Trading logic effectiveness assessment (REAL algorithm, not simulated)
+   - Portfolio allocation optimization review with actual backtesting
+   - Risk-return profile evaluation using historical performance
+   - Market condition adaptability analysis with out-of-sample testing
 
-2. **Risk Management Validation**
-   - Risk calculation accuracy verification
-   - Portfolio risk metrics validation
-   - Stop-loss and risk limit effectiveness
-   - Concentration and correlation risk assessment
+2. **Risk Management Validation** ⚠️ **ENHANCED WITH STATISTICAL SIGNIFICANCE**
+   - Risk calculation accuracy verification with real market data
+   - Portfolio risk metrics validation against actual volatility
+   - Stop-loss and risk limit effectiveness in historical scenarios
+   - Concentration and correlation risk assessment with real correlation matrix
 
-3. **Implementation Quality Review**
-   - Algorithm code quality and maintainability
-   - Risk calculation implementation correctness
-   - Performance optimization opportunities
-   - Data quality and processing accuracy
+3. **Implementation Quality Review** ⚠️ **ENHANCED WITH REGULATORY FOCUS**
+   - Algorithm code quality and maintainability for TRS submission
+   - Risk calculation implementation correctness for regulatory compliance
+   - Performance optimization opportunities maintaining accuracy standards
+   - Data quality and processing accuracy for audit trail requirements
 
 #### TRS Process
 **Responsibility:** TRS
@@ -134,7 +149,7 @@ This document defines the comprehensive weekly review and planning cycle for the
 7. Validate risk reporting and monitoring capabilities
 
 #### TRS Reporting
-**Output:** tradval.md (weekly comprehensive assessment)
+**Output:** week#trsvalidation.md (weekly comprehensive assessment)
 **Contents:**
 1. **Algorithm Assessment**
    - Trading logic effectiveness evaluation
@@ -155,6 +170,64 @@ This document defines the comprehensive weekly review and planning cycle for the
    - Production deployment readiness
    - Stress testing recommendations
    - Performance monitoring suggestions
+
+### Stage 2A: Algorithm Performance Validation (NEW - Mandatory)
+**⚠️ NEW STAGE** - Added based on unanimous agent recommendation
+
+#### Algorithm Validation Gate Requirements
+**Trigger:** Weekly algorithm development review
+**Responsibility:** TRS + Algorithm Specialist
+**⚠️ CRITICAL:** This stage must PASS before proceeding to Stage 3
+
+**MANDATORY REQUIREMENTS:**
+1. **Real Correlation Measurement** ≥ 0.85 with statistical significance (p < 0.05)
+2. **Backtesting Results** on 2+ years historical data with out-of-sample testing
+3. **Statistical Validation** with minimum 500+ prediction samples
+4. **Trading Signal Accuracy** vs actual market outcomes documented
+
+#### Algorithm Validation Process
+**Activities:**
+1. **Historical Backtesting Execution**
+   - Run algorithm against 2+ years of historical data
+   - Measure actual prediction accuracy vs market outcomes
+   - Calculate Pearson correlation coefficient with confidence intervals
+   - Validate statistical significance (p-value < 0.05)
+
+2. **Out-of-Sample Testing**
+   - Reserve 20% of historical data for validation
+   - Test algorithm on unseen data
+   - Measure performance consistency across different time periods
+   - Validate temporal stability across market regimes
+
+3. **Performance Attribution Analysis**
+   - Identify sources of algorithm accuracy/inaccuracy
+   - Measure contribution of different signal components
+   - Validate risk-adjusted performance metrics (Sharpe ratio ≥ 1.2)
+   - Document maximum drawdown and recovery patterns
+
+#### Algorithm Validation Reporting
+**Output:** week#algorithmvalidation.md
+**PASS/FAIL Criteria:**
+- ✅ **PASS**: All correlation, statistical significance, and performance targets met
+- ❌ **FAIL**: Any simulated data usage or performance targets not met
+
+### Stage 2B: Statistical Significance Validation (NEW - Mandatory)
+**⚠️ NEW STAGE** - Required for regulatory compliance
+
+#### Statistical Validation Requirements
+**Mandatory Tests:**
+1. **P-value < 0.05** for correlation significance
+2. **Confidence Intervals** calculated and documented
+3. **Bootstrap Testing** for robustness validation
+4. **Multiple Time Horizon** validation (daily, weekly, monthly)
+5. **Cross-Validation** with walk-forward analysis
+
+#### Statistical Validation Output
+**Requirements:**
+- Complete statistical analysis report with confidence intervals
+- Temporal stability demonstration across different market regimes
+- Risk-adjusted performance metrics with significance testing
+- Multi-timeframe consistency validation
 
 ### Stage 3: Review and Issue Resolution (Project Owner)
 
@@ -242,13 +315,17 @@ This document defines the comprehensive weekly review and planning cycle for the
 - [ ] No critical security or stability issues identified
 - [ ] Visual Studio project compilation and debugging functional
 
-### Algorithm Validation Checklist:
-- [ ] Trading algorithm logic implemented correctly
-- [ ] Risk calculations accurate and complete
-- [ ] Portfolio management functions operate as specified
-- [ ] Performance metrics generate expected results
-- [ ] Market data processing maintains quality standards
-- [ ] Algorithm behavior appropriate under test scenarios
+### Algorithm Validation Checklist: ⚠️ **UPDATED WITH REGULATORY REQUIREMENTS**
+- [ ] **Real Trading Algorithm** implemented (no simulated/placeholder logic)
+- [ ] **Historical Backtesting** completed on 2+ years of data
+- [ ] **Real Correlation** ≥ 0.85 between predictions and actual market outcomes
+- [ ] **Statistical Significance** validated with p-value < 0.05
+- [ ] **Out-of-Sample Testing** completed with 20% holdout data
+- [ ] **Risk Calculations** accurate and complete with real market data
+- [ ] **Performance Attribution** analysis completed and documented
+- [ ] **Multi-Timeframe Validation** (daily, weekly, monthly) consistent
+- [ ] **Database Population** validated with 730+ days per instrument
+- [ ] **Market Data Processing** maintains >98% quality standards
 
 ### Planning Validation Checklist:
 - [ ] All weekly objectives addressed (completed or documented)

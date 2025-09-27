@@ -64,10 +64,15 @@ Quality Scoring: Source-based weighting for sentiment reliability
 
 ## Universe Definition and Filtering
 
-### Initial Universe Criteria:
-1. **Liquidity Requirement:** Reasonably liquid cryptocurrencies only
-2. **Exclusion Rule:** No stablecoins in trading universe
-3. **Data Availability:** Must have reliable CryptoCompare and news data
+### Expanded Universe Approach:
+1. **Universe Size:** 75 most liquid cryptocurrencies across 12 market sectors
+2. **Sector Diversification:** Layer1, DeFi, Smart Contract, Oracle, Gaming, AI/ML, Privacy, Interoperability, Storage, Infrastructure, Exchange Tokens, Meme/Social
+3. **Tiered Data Strategy:**
+   - **Tier 1 (Top 20):** 2-year historical data, highest priority news coverage
+   - **Tier 2 (21-50):** 1-year historical data, medium priority coverage
+   - **Tier 3 (51-75):** 6-month historical data, selective coverage
+4. **Exclusion Rule:** No stablecoins or wrapped tokens in trading universe
+5. **Pair Formation Capacity:** 2,775 possible combinations enabling optimal pair selection
 
 ### Risk-Based Exclusions (Tunable Thresholds):
 1. **Gamma Instability:** Coefficient of variation > `gamma_cv_threshold` over `gamma_window_days` window
@@ -92,16 +97,28 @@ Quality Scoring: Source-based weighting for sentiment reliability
 2. Remove coins with unstable gamma factors
 3. Ensure remaining universe meets liquidity requirements
 
-### Step 3: Symmetrical Pair Formation
-**Pairing Logic:**
-- Pair #1: Top-ranked coin (long) + Bottom-ranked coin (short)
-- Pair #2: Second-ranked coin (long) + Penultimate coin (short)
-- Continue until optimal number of pairs formed
+### Step 3: Algorithm-Confidence-Based Pair Selection
+**Pair Selection from 75-Coin Universe:**
+1. **Initial Screening:** Filter 2,775 possible pairs to ~500 viable candidates based on:
+   - Correlation thresholds for effective hedging
+   - Liquidity compatibility
+   - Sector diversification benefits
+2. **Extensive Backtesting:** Rank all candidate pairs by performance across market regimes
+3. **Dynamic Selection:** Choose optimal pairs based on current algorithm confidence
 
-**Dynamic Pair Count:**
-- **High Confidence:** Fewer pairs (concentrated positions)
-- **Low Confidence:** More pairs (diversified positions)
-- **Concentration Limit:** Maximum 5% per individual coin (tunable parameter)
+**Dynamic Concentration Based on Sorting Algorithm Confidence:**
+- **Very High Confidence (>85%):** 3-5 pairs (concentrate on best predictions)
+- **High Confidence (70-85%):** 8-12 pairs (moderate concentration)
+- **Moderate Confidence (55-70%):** 15-20 pairs (balanced approach)
+- **Low Confidence (40-55%):** 25-35 pairs (diversified approach)
+- **Very Low Confidence (<40%):** 40-50 pairs (maximum diversification)
+
+**Algorithm Confidence Metrics:**
+- Recent prediction accuracy (30-day rolling window)
+- Top-quartile sorting effectiveness
+- Signal separation between ranked pairs
+- Ranking consistency over time
+- Sufficient prediction sample size (minimum 100 predictions)
 
 ### Step 4: Position Sizing
 **Cash Buffer:** `cash_buffer_ratio`% cash maintained for operational smoothing
@@ -255,6 +272,24 @@ Quality Scoring: Source-based weighting for sentiment reliability
 | `var_time_horizon` | VaR calculation time horizon | 1 | 1 - 7 | days |
 | `sharpe_rolling_window` | Sharpe ratio calculation window | 30 | 14 - 90 | days |
 
+### Volatility Control Parameters
+| Parameter | Description | Default Value | Range | Unit |
+|-----------|-------------|---------------|--------|------|
+| `volatility_sensitivity` | Sensitivity to volatility changes | 1.0 | 0.5 - 2.0 | multiplier |
+| `high_volatility_weight` | Weight for high volatility assets | 0.75 | 0.3 - 1.0 | weight |
+| `extreme_volatility_weight` | Weight for extreme volatility assets | 0.35 | 0.1 - 0.7 | weight |
+| `alpha_vs_volatility_tradeoff` | Alpha vs low volatility preference | 0.7 | 0.0 - 1.0 | ratio |
+| `volatility_regime_adaptation_speed` | Regime change adaptation speed | 0.1 | 0.05 - 0.3 | speed |
+
+### Claude AI Safety Parameters
+| Parameter | Description | Default Value | Range | Unit |
+|-----------|-------------|---------------|--------|------|
+| `absolute_max_adjustment` | Hard-coded maximum adjustment | 0.35 | FIXED | % (cannot exceed) |
+| `sanity_check_threshold` | Flag suspicious adjustments | 0.50 | 0.3 - 0.8 | % |
+| `max_symbols_per_call` | Batch processing limit | 20 | 10 - 50 | count |
+| `circuit_breaker_threshold` | Emergency shutdown trigger | 0.30 | 0.2 - 0.5 | % |
+| `max_consecutive_adjustments` | Circuit breaker trigger count | 3 | 2 - 5 | count |
+
 ### Emergency Controls
 | Parameter | Description | Default Value | Range | Unit |
 |-----------|-------------|---------------|--------|------|
@@ -282,16 +317,70 @@ Quality Scoring: Source-based weighting for sentiment reliability
 - Stop-loss execution at pair and portfolio levels
 - Trading cost tracking and optimization
 
+## TRS-Approved Implementation Plan
+
+### **✅ TRS CONDITIONAL APPROVAL GRANTED**
+**Status**: Approved for phased implementation with enhanced risk controls
+**Review Date**: September 26, 2025
+**Implementation Authority**: TRS-approved staged rollout
+
+### Phase 1: Conservative Foundation (Days 16-17)
+**Scope**: Tier 1 Implementation (20 coins, ~190 pairs)
+- **Universe**: Top 20 coins by market cap with 2-year historical data
+- **Pair Candidates**: ~190 possible combinations
+- **Concentration Range**: 8-20 pairs (enhanced minimum from 3)
+- **Risk Validation**: Algorithm confidence metrics proven on smaller universe
+- **Success Criteria**: >85% confidence correlation with trading performance
+
+### Phase 2: Measured Expansion (Days 18-19)
+**Scope**: Add Tier 2 (50 total coins, ~1,225 pairs)
+- **Universe**: Add 30 mid-cap coins with 1-year historical data
+- **Enhanced Validation**: Full statistical framework operational
+- **Risk Monitoring**: Real-time correlation and concentration tracking
+- **Success Criteria**: Maintain system performance with 2.5x complexity increase
+
+### Phase 3: Full Implementation (Week 5)
+**Scope**: Complete 75-coin universe with full dynamic concentration
+- **Universe**: All 75 coins across 12 sectors operational
+- **Pair Selection**: Optimized selection from 2,775 possible combinations
+- **Production Deployment**: Full algorithm with comprehensive monitoring
+- **Success Criteria**: Improved risk-adjusted performance vs Phase 1 baseline
+
+### Enhanced Risk Controls (TRS-Mandated)
+**Concentration Limits:**
+- **Ultra-High Concentration**: 3-5 pairs ONLY if confidence >90% (raised from 85%)
+- **Absolute Minimum**: 8 pairs regardless of confidence (raised from 3)
+- **Single Coin Exposure**: 8% maximum (reduced from 10%)
+- **Sector Exposure**: 25% maximum (new requirement)
+- **Minimum Sectors**: 4 sectors represented (diversification requirement)
+
+**Algorithm Confidence Requirements:**
+- **High Confidence Decisions**: 200 predictions minimum (raised from 100)
+- **Confidence Stability**: 14-day stability required before concentration increases
+- **Performance Validation**: >75% correlation with actual trading outcomes
+- **Emergency Override**: Force diversification if confidence drops >20% in 48 hours
+
+**Statistical Validation Framework:**
+- **Out-of-sample validation**: 6-month holdout data mandatory
+- **Walk-forward analysis**: Rolling optimization with validation
+- **Overfitting prevention**: Maximum 3 backtesting iterations per pair
+- **Statistical significance**: Chi-square testing for pair performance
+
+### Implementation Success Gates
+**Phase 1 → Phase 2**: System stability + confidence accuracy >85%
+**Phase 2 → Phase 3**: Risk control validation + performance maintenance
+**Production Authorization**: TRS validation of all criteria + 72-hour stress test
+
+**Veto Triggers**: Algorithm confidence <70%, system failures >2hrs/48hr period, risk violations >2/week
+
 ---
 
-**Algorithm Status:** Specification Complete - Awaiting TRS Review
-**TRS Review Required For:**
-1. Default risk metrics and thresholds for coin exclusion
-2. Pair-level and portfolio-level stop-loss recommendations
-3. Risk-return optimization approach for rebalancing decisions
-4. Specific performance and risk metrics for hourly/daily reporting
+**Algorithm Status:** ✅ **TRS CONDITIONAL APPROVAL - READY FOR PHASE 1 IMPLEMENTATION**
+**Implementation Plan:** Phased rollout with mandatory risk control validation
+**Authority:** TRS-approved with weekly validation requirements
+**Next Milestone:** Day 16-17 Phase 1 (Tier 1) implementation and validation
 
 *Document Owner: SDM*
-*Approval Authority: Project Owner*
-*Created: Setup Phase*
-*Modification Rights: Project Owner Only*
+*Risk Authority: TRS Conditional Approval*
+*Implementation Authority: Phased rollout approved*
+*Modification Rights: TRS approval required for risk parameter changes*

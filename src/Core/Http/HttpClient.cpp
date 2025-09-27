@@ -8,16 +8,50 @@
 #include <regex>
 
 // Platform-specific includes
-// Note: For production, would include:
-// #ifdef _WIN32
-// #include <windows.h>
-// #include <wininet.h>
-// #elif __APPLE__ || __linux__
-// #include <curl/curl.h>
-// #endif
+#ifdef _WIN32
+#include <windows.h>
+#include <wininet.h>
+#elif __APPLE__ || __linux__
+#include <curl/curl.h>
+#endif
 
 namespace CryptoClaude {
 namespace Http {
+
+#if defined(__APPLE__) || defined(__linux__)
+// cURL callback function for writing response data
+static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* userp) {
+    size_t totalSize = size * nmemb;
+    userp->append((char*)contents, totalSize);
+    return totalSize;
+}
+
+// cURL callback function for writing headers
+static size_t HeaderCallback(char* buffer, size_t size, size_t nitems, std::map<std::string, std::string>* headers) {
+    size_t totalSize = size * nitems;
+    std::string header(buffer, totalSize);
+
+    // Remove trailing CRLF
+    if (header.size() >= 2 && header.substr(header.size() - 2) == "\r\n") {
+        header = header.substr(0, header.size() - 2);
+    }
+
+    // Parse header
+    size_t colonPos = header.find(':');
+    if (colonPos != std::string::npos && colonPos < header.size() - 1) {
+        std::string key = header.substr(0, colonPos);
+        std::string value = header.substr(colonPos + 1);
+
+        // Trim whitespace
+        value.erase(0, value.find_first_not_of(" \t"));
+        value.erase(value.find_last_not_of(" \t") + 1);
+
+        (*headers)[key] = value;
+    }
+
+    return totalSize;
+}
+#endif
 
 // ================================
 // HttpResponse Implementation
@@ -416,58 +450,116 @@ std::string HttpClient::extractHost(const std::string& url) const {
 
 // Platform-specific HTTP implementation
 HttpResponse HttpClient::performHttpCall(const HttpRequest& request) {
-    // For Day 11 testing, we'll implement a basic mock response
-    // In production, this would use CURL (Unix) or WinINet (Windows)
+#if defined(__APPLE__) || defined(__linux__)
+    // Real cURL implementation
+    auto start_time = std::chrono::steady_clock::now();
 
+    CURL* curl = curl_easy_init();
+    if (!curl) {
+        HttpResponse response(0, "");
+        response.setError("Failed to initialize cURL");
+        return response;
+    }
+
+    std::string responseBody;
+    std::map<std::string, std::string> responseHeaders;
+    char errorBuffer[CURL_ERROR_SIZE];
+
+    // Build URL and headers
     std::string url = request.buildUrl();
     auto headers = request.buildHeaders();
 
     if (enableLogging_) {
-        std::cout << "[HTTP] Mock implementation - would call: " << url << std::endl;
-        for (const auto& header : headers) {
-            std::cout << "[HTTP] Header: " << header.first << ": " << header.second << std::endl;
-        }
+        std::cout << "[HTTP] Real cURL call: " << url << std::endl;
     }
 
-    // Simulate different responses based on URL patterns
-    if (url.find("min-api.cryptocompare.com") != std::string::npos) {
-        // Simulate CryptoCompare API response
-        std::string mockBody = R"({"USD":50000,"EUR":42000})";
-        std::map<std::string, std::string> mockHeaders = {
-            {"Content-Type", "application/json"},
-            {"Server", "CryptoCompare"}
-        };
-        return HttpResponse(200, mockBody, mockHeaders, std::chrono::milliseconds(150));
+    // Set basic cURL options
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseBody);
+    curl_easy_setopt(curl, CURLOPT_HEADERFUNCTION, HeaderCallback);
+    curl_easy_setopt(curl, CURLOPT_HEADERDATA, &responseHeaders);
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errorBuffer);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, static_cast<long>(request.getTimeout().count()));
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(curl, CURLOPT_MAXREDIRS, 3L);
+
+    // Set User-Agent
+    if (!userAgent_.empty()) {
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, userAgent_.c_str());
     }
-    else if (url.find("newsapi.org") != std::string::npos) {
-        // Simulate NewsAPI response
-        std::string mockBody = R"({"status":"ok","totalResults":100,"articles":[]})";
-        std::map<std::string, std::string> mockHeaders = {
-            {"Content-Type", "application/json"},
-            {"Server", "NewsAPI"}
-        };
-        return HttpResponse(200, mockBody, mockHeaders, std::chrono::milliseconds(200));
+
+    // Set headers
+    struct curl_slist* headerList = nullptr;
+    for (const auto& header : headers) {
+        std::string headerStr = header.first + ": " + header.second;
+        headerList = curl_slist_append(headerList, headerStr.c_str());
     }
-    else if (url.find("test-error") != std::string::npos) {
-        // Simulate error for testing retry logic
-        HttpResponse response(500, "Internal Server Error");
-        response.setError("Simulated server error");
-        return response;
+    if (headerList) {
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headerList);
     }
-    else if (url.find("test-timeout") != std::string::npos) {
-        // Simulate timeout
+
+    // Set method and body
+    switch (request.getMethod()) {
+        case HttpMethod::GET:
+            // Default is GET
+            break;
+        case HttpMethod::POST:
+            curl_easy_setopt(curl, CURLOPT_POST, 1L);
+            if (!request.getBody().empty()) {
+                curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request.getBody().c_str());
+            }
+            break;
+        case HttpMethod::PUT:
+            curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+            if (!request.getBody().empty()) {
+                curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request.getBody().c_str());
+            }
+            break;
+        case HttpMethod::DELETE:
+            curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+            break;
+        case HttpMethod::PATCH:
+            curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+            if (!request.getBody().empty()) {
+                curl_easy_setopt(curl, CURLOPT_POSTFIELDS, request.getBody().c_str());
+            }
+            break;
+    }
+
+    // Perform the request
+    CURLcode res = curl_easy_perform(curl);
+
+    auto end_time = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+
+    // Get response code
+    long responseCode = 0;
+    curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &responseCode);
+
+    // Clean up
+    if (headerList) {
+        curl_slist_free_all(headerList);
+    }
+    curl_easy_cleanup(curl);
+
+    // Handle cURL errors
+    if (res != CURLE_OK) {
         HttpResponse response(0, "");
-        response.setError("Request timeout");
+        std::string errorMsg = "cURL error: ";
+        errorMsg += (strlen(errorBuffer) > 0) ? errorBuffer : curl_easy_strerror(res);
+        response.setError(errorMsg);
         return response;
     }
-    else {
-        // Generic successful response
-        std::string mockBody = R"({"status":"success","message":"Mock HTTP response"})";
-        std::map<std::string, std::string> mockHeaders = {
-            {"Content-Type", "application/json"}
-        };
-        return HttpResponse(200, mockBody, mockHeaders, std::chrono::milliseconds(100));
-    }
+
+    return HttpResponse(static_cast<int>(responseCode), responseBody, responseHeaders, duration);
+
+#else
+    // Fallback for unsupported platforms
+    HttpResponse response(500, "");
+    response.setError("HTTP client not implemented for this platform");
+    return response;
+#endif
 }
 
 // ================================

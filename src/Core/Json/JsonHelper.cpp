@@ -4,6 +4,23 @@
 namespace CryptoClaude {
 namespace Json {
 
+json JsonHelper::parse(const std::string& jsonStr) {
+#if JSON_LIBRARY_AVAILABLE
+    try {
+        return json::parse(jsonStr);
+    } catch (const nlohmann::json::parse_error& e) {
+        std::cerr << "JSON parse error: " << e.what() << std::endl;
+        return json{};
+    } catch (const std::exception& e) {
+        std::cerr << "JSON parsing exception: " << e.what() << std::endl;
+        return json{};
+    }
+#else
+    std::cerr << "Error: " << getInstallationInstructions() << std::endl;
+    return json{};
+#endif
+}
+
 bool JsonHelper::parseString(const std::string& jsonStr, json& result) {
 #if JSON_LIBRARY_AVAILABLE
     try {

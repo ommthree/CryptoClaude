@@ -8,8 +8,8 @@ namespace CryptoClaude {
 namespace Analytics {
 
 // RSI Implementation
-RSIResult TechnicalIndicators::calculateRSI(const std::vector<double>& prices, int period) {
-    RSIResult result;
+RSI TechnicalIndicators::calculateRSI(const std::vector<double>& prices, int period) {
+    RSI result;
     result.period = period;
 
     if (prices.size() < static_cast<size_t>(period + 1)) {
@@ -46,9 +46,10 @@ RSIResult TechnicalIndicators::calculateRSI(const std::vector<double>& prices, i
 }
 
 // Simple Moving Average Implementation
-SMAResult TechnicalIndicators::calculateSMA(const std::vector<double>& prices, int period) {
-    SMAResult result;
-    result.period = period;
+IndicatorResult TechnicalIndicators::calculateSMA(const std::vector<double>& prices, int period) {
+    IndicatorResult result;
+    result.indicatorName = "SMA";
+    result.parameters["period"] = period;
 
     if (prices.size() < static_cast<size_t>(period)) {
         throw std::invalid_argument("Insufficient data points for SMA calculation");
@@ -66,9 +67,10 @@ SMAResult TechnicalIndicators::calculateSMA(const std::vector<double>& prices, i
 }
 
 // Exponential Moving Average Implementation
-EMAResult TechnicalIndicators::calculateEMA(const std::vector<double>& prices, int period) {
-    EMAResult result;
-    result.period = period;
+IndicatorResult TechnicalIndicators::calculateEMA(const std::vector<double>& prices, int period) {
+    IndicatorResult result;
+    result.indicatorName = "EMA";
+    result.parameters["period"] = period;
 
     if (prices.empty()) {
         throw std::invalid_argument("Empty price data for EMA calculation");
@@ -89,8 +91,7 @@ EMAResult TechnicalIndicators::calculateEMA(const std::vector<double>& prices, i
 // Bollinger Bands Implementation
 BollingerBands TechnicalIndicators::calculateBollingerBands(const std::vector<double>& prices, int period, double standardDeviations) {
     BollingerBands result;
-    result.period = period;
-    result.standardDeviations = standardDeviations;
+    // BollingerBands doesn't have period or standardDeviations fields - these are computed internally
 
     if (prices.size() < static_cast<size_t>(period)) {
         throw std::invalid_argument("Insufficient data points for Bollinger Bands calculation");
@@ -129,11 +130,9 @@ BollingerBands TechnicalIndicators::calculateBollingerBands(const std::vector<do
 }
 
 // MACD Implementation
-MACDResult TechnicalIndicators::calculateMACD(const std::vector<double>& prices, int fastPeriod, int slowPeriod, int signalPeriod) {
-    MACDResult result;
-    result.fastPeriod = fastPeriod;
-    result.slowPeriod = slowPeriod;
-    result.signalPeriod = signalPeriod;
+MACD TechnicalIndicators::calculateMACD(const std::vector<double>& prices, int fastPeriod, int slowPeriod, int signalPeriod) {
+    MACD result;
+    // MACD struct only contains the calculated vectors, not the input parameters
 
     if (prices.size() < static_cast<size_t>(slowPeriod)) {
         throw std::invalid_argument("Insufficient data points for MACD calculation");
@@ -167,13 +166,14 @@ MACDResult TechnicalIndicators::calculateMACD(const std::vector<double>& prices,
 }
 
 // Stochastic Oscillator Implementation
-StochasticResult TechnicalIndicators::calculateStochastic(const std::vector<double>& high,
-                                                        const std::vector<double>& low,
-                                                        const std::vector<double>& close,
-                                                        int kPeriod, int dPeriod) {
-    StochasticResult result;
-    result.kPeriod = kPeriod;
-    result.dPeriod = dPeriod;
+IndicatorResult TechnicalIndicators::calculateStochastic(const std::vector<double>& high,
+                                                       const std::vector<double>& low,
+                                                       const std::vector<double>& close,
+                                                       int kPeriod, int dPeriod) {
+    IndicatorResult result;
+    result.indicatorName = "Stochastic";
+    result.parameters["kPeriod"] = kPeriod;
+    result.parameters["dPeriod"] = dPeriod;
 
     if (high.size() != low.size() || high.size() != close.size()) {
         throw std::invalid_argument("High, low, and close vectors must be the same size");
@@ -189,30 +189,23 @@ StochasticResult TechnicalIndicators::calculateStochastic(const std::vector<doub
         double lowestLow = *std::min_element(low.begin() + i - kPeriod + 1, low.begin() + i + 1);
 
         double k = ((close[i] - lowestLow) / (highestHigh - lowestLow)) * 100;
-        result.kPercent.push_back(k);
+        result.values.push_back(k); // Store %K values in the standard values vector
     }
 
-    // Calculate %D (SMA of %K)
-    if (result.kPercent.size() >= static_cast<size_t>(dPeriod)) {
-        for (size_t i = dPeriod - 1; i < result.kPercent.size(); ++i) {
-            double sum = 0;
-            for (int j = 0; j < dPeriod; ++j) {
-                sum += result.kPercent[i - j];
-            }
-            result.dPercent.push_back(sum / dPeriod);
-        }
-    }
+    // For IndicatorResult, we only store %K values in the main values vector
+    // %D can be calculated separately if needed using a moving average of %K
 
     return result;
 }
 
 // Williams %R Implementation
-WilliamsRResult TechnicalIndicators::calculateWilliamsR(const std::vector<double>& high,
-                                                       const std::vector<double>& low,
-                                                       const std::vector<double>& close,
-                                                       int period) {
-    WilliamsRResult result;
-    result.period = period;
+IndicatorResult TechnicalIndicators::calculateWilliamsR(const std::vector<double>& high,
+                                               const std::vector<double>& low,
+                                               const std::vector<double>& close,
+                                               int period) {
+    IndicatorResult result;
+    result.indicatorName = "WilliamsR";
+    result.parameters["period"] = period;
 
     if (high.size() != low.size() || high.size() != close.size()) {
         throw std::invalid_argument("High, low, and close vectors must be the same size");
@@ -234,12 +227,13 @@ WilliamsRResult TechnicalIndicators::calculateWilliamsR(const std::vector<double
 }
 
 // Average True Range Implementation
-ATRResult TechnicalIndicators::calculateATR(const std::vector<double>& high,
-                                          const std::vector<double>& low,
-                                          const std::vector<double>& close,
-                                          int period) {
-    ATRResult result;
-    result.period = period;
+IndicatorResult TechnicalIndicators::calculateATR(const std::vector<double>& high,
+                                     const std::vector<double>& low,
+                                     const std::vector<double>& close,
+                                     int period) {
+    IndicatorResult result;
+    result.indicatorName = "ATR";
+    result.parameters["period"] = period;
 
     if (high.size() != low.size() || high.size() != close.size()) {
         throw std::invalid_argument("High, low, and close vectors must be the same size");

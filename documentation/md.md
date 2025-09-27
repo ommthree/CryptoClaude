@@ -91,6 +91,13 @@ This document provides a comprehensive index of all markdown documentation files
 **Modification Authority:** Project Owner only
 **Dependencies:** Team structure, process requirements
 
+### filing.md
+**Purpose:** Directory and subdirectory structure specification
+**Contents:** Complete project directory structure, file organization rules, Librarian guidelines
+**Owner:** SDM (proposed and maintained)
+**Modification Authority:** SDM (structure changes), Librarian (maintenance updates)
+**Dependencies:** Project organization needs, file management requirements
+
 ### md.md (This Document)
 **Purpose:** Documentation index and management guide
 **Contents:** File purposes, ownership, modification rules
@@ -98,21 +105,49 @@ This document provides a comprehensive index of all markdown documentation files
 **Modification Authority:** SDM (updates), Project Owner (structural changes)
 **Maintenance:** Updated when new documents are created or roles change
 
-## Validation Documents (Agent Reports)
+## Daily Validation Documents (Agent Reports)
 
-### validation.md
-**Purpose:** Validator findings and recommendations
-**Contents:** Daily/weekly validation results, issues found, test results
+### day#validation.md
+**Purpose:** Daily validator findings and recommendations
+**Contents:** Daily validation results, issues found, test results
 **Owner:** Validator
 **Modification Authority:** Validator only
-**Lifecycle:** Created per validation cycle, archived after resolution
+**Lifecycle:** Created daily during development, numbered sequentially (day1validation.md, day2validation.md, etc.)
+**Naming Convention:** day[1-9]validation.md
 
-### tradval.md
-**Purpose:** Trading and Risk Specialist assessment reports
+### day#trsvalidation.md
+**Purpose:** Daily Trading and Risk Specialist assessment reports
 **Contents:** Algorithm analysis, risk assessments, optimization recommendations
 **Owner:** TRS
 **Modification Authority:** TRS only
-**Lifecycle:** Created when algorithm changes occur, archived after implementation
+**Lifecycle:** Created daily when algorithm changes occur, numbered sequentially
+**Naming Convention:** day[1-9]trsvalidation.md
+
+### day#plan.md
+**Purpose:** Daily development plan for specific day
+**Contents:** Detailed daily tasks, success criteria, progress tracking
+**Owner:** SDM (creation) → Developer (updates)
+**Modification Authority:** Developer (completion updates), SDM (task modifications)
+**Lifecycle:** Created for each development day, numbered sequentially
+**Naming Convention:** day[1-9]plan.md
+
+## Weekly Validation Documents
+
+### week#trsvalidation.md
+**Purpose:** Weekly comprehensive Trading and Risk Specialist assessment
+**Contents:** Weekly algorithm review, performance analysis, strategic recommendations
+**Owner:** TRS
+**Modification Authority:** TRS only
+**Lifecycle:** Created weekly during development, numbered sequentially
+**Naming Convention:** week[1-9]trsvalidation.md
+
+### week#validation.md
+**Purpose:** Weekly comprehensive Validator assessment
+**Contents:** Weekly system validation, comprehensive testing results, technical analysis
+**Owner:** Validator
+**Modification Authority:** Validator only
+**Lifecycle:** Created weekly during development, numbered sequentially
+**Naming Convention:** week[1-9]validation.md
 
 ## Archive Directory
 
@@ -142,23 +177,68 @@ Updated by Developer and Validator as needed for quality assurance.
 
 ---
 
+## Approved .md File List (Librarian Reference)
+
+### Core Strategic Documents (Required)
+- **agents.md** - Team role definitions
+- **algo.md** - Trading algorithm specification
+- **arch.md** - Technical architecture specification
+- **busreq.md** - Business requirements specification
+- **schema.md** - Database structure specification
+- **target.md** - Target state specification
+
+### Process Documents (Required)
+- **dailyprocess.md** - Daily development workflow
+- **setupprocess.md** - Initial project setup process
+- **weeklyprocess.md** - Weekly review and planning process
+- **weeklyplanning.md** - High-level weekly development plan
+
+### Documentation Management (Required)
+- **filing.md** - Directory and subdirectory structure specification
+- **md.md** - Documentation index and standards (this file)
+
+### Daily Documents (Created as needed, numbered sequentially)
+- **day#validation.md** - Daily validation reports
+- **day#plan.md** - Daily development plans
+- **day#trsvalidation.md** - Daily TRS assessments
+
+### Weekly Documents (Created as needed, numbered sequentially)
+- **week#trsvalidation.md** - Weekly TRS comprehensive assessments
+- **week#validation.md** - Weekly comprehensive validation reports
+
+### Current Working Documents (Single instances)
+- **dayplan.md** - Current week's daily plan
+
+**⚠️ LIBRARIAN RULE**: No .md file should be created that is not listed above. Any new file types require SDM approval and addition to this list.
+
+---
+
 ## Document Lifecycle Management
 
 ### Creation Process:
-1. SDM identifies documentation need
+1. SDM identifies documentation need and verifies against approved list
 2. SDM drafts document according to ownership rules
 3. Required approvals obtained before activation
-4. Document added to this index
+4. Document added to this index if new type
 
 ### Update Process:
 1. Authorized agent makes modifications according to authority rules
-2. SDM updates index if structural changes occur
-3. Dependencies reviewed for cascade effects
+2. Librarian maintains file organization and naming consistency
+3. SDM updates index if structural changes occur
+4. Dependencies reviewed for cascade effects
 
 ### Quality Gates:
 - All strategic documents require Project Owner approval
 - All tactical documents require SDM approval for structural changes
 - All process documents are locked to Project Owner authority
+- All new .md file types require SDM approval
+
+### Librarian Maintenance Tasks:
+1. **File Organization**: Ensure all .md files are in proper directories
+2. **Naming Compliance**: Verify files follow naming conventions
+3. **Content Structure**: Remove bloat, maintain consistent formatting
+4. **Archive Management**: Move outdated files to archive directory
+5. **Index Compliance**: Ensure no unauthorized .md files exist
 
 ---
 

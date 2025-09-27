@@ -1,7 +1,9 @@
 #include "PortfolioOptimizer.h"
+#include "../Analytics/BacktestingEngine.h"
 #include <random>
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 
 namespace CryptoClaude {
 namespace Optimization {
@@ -977,6 +979,688 @@ void PortfolioOptimizer::updateTriggerThresholds(RebalancingTrigger::TriggerType
             trigger.threshold = newThreshold;
         }
     }
+}
+
+// === ML-ENHANCED PORTFOLIO OPTIMIZATION ===
+
+OptimizationResult PortfolioOptimizer::optimizePortfolio_MLEnhanced(
+    const Portfolio& portfolio,
+    const std::vector<Position>& currentPositions,
+    const std::vector<std::string>& availableAssets,
+    CryptoClaude::ML::RandomForestPredictor& predictor,
+    double mlWeight) {
+
+    OptimizationResult result;
+    result.optimizationMethod = "ML-Enhanced Optimization";
+    result.timestamp = std::chrono::system_clock::now();
+
+    if (!validateInputData(availableAssets)) {
+        logOptimizationWarning("Invalid input data for ML-Enhanced optimization", result);
+        return result;
+    }
+
+    try {
+        // Step 1: Get baseline allocation using risk parity as foundation
+        auto baselineResult = optimizePortfolio_RiskParity(portfolio, currentPositions, availableAssets);
+
+        if (baselineResult.allocations.empty()) {
+            logOptimizationWarning("Failed to compute baseline allocation for ML enhancement", result);
+            return result;
+        }
+
+        // Step 2: Generate ML feature vectors for each asset
+        std::map<std::string, CryptoClaude::ML::MLFeatureVector> mlFeatures;
+
+        for (const std::string& symbol : availableAssets) {
+            // Create synthetic market data for feature engineering
+            std::vector<CryptoClaude::Analytics::MarketDataPoint> marketData;
+            std::vector<CryptoClaude::Database::Models::SentimentData> sentimentData;
+
+            // Get current market data (simplified - in production would come from database)
+            auto currentMarket = marketData_.find(symbol);
+            if (currentMarket != marketData_.end()) {
+                CryptoClaude::Analytics::MarketDataPoint point;
+                point.symbol = symbol;
+                point.close = currentMarket->second.getClose();
+                point.open = point.close * 0.99;  // Synthetic open
+                point.high = point.close * 1.02;  // Synthetic high
+                point.low = point.close * 0.98;   // Synthetic low
+                point.volume = 1000000.0;  // Synthetic volume
+                point.timestamp = std::chrono::system_clock::now();
+
+                // Create historical data for technical indicators
+                for (int i = 0; i < 30; ++i) {
+                    CryptoClaude::Analytics::MarketDataPoint histPoint = point;
+                    histPoint.timestamp = point.timestamp - std::chrono::hours(i);
+                    histPoint.close = point.close * (1.0 + (std::rand() % 200 - 100) * 0.0001); // ±1% random walk
+                    marketData.push_back(histPoint);
+                }
+            }
+
+            // Get sentiment data if available
+            auto sentimentIt = sentimentData_.find(symbol);
+            if (sentimentIt != sentimentData_.end()) {
+                CryptoClaude::Database::Models::SentimentData sentiment = sentimentIt->second;
+                sentimentData.push_back(sentiment);
+            }
+
+            // Create ML features using the predictor's feature engineering
+            mlFeatures[symbol] = predictor.createFeatures(symbol, marketData, sentimentData);
+        }
+
+        // Step 3: Get ML predictions for all assets
+        auto mlPredictions = predictor.getPredictionsForOptimization(availableAssets, mlFeatures);
+
+        // Step 4: Combine baseline allocation with ML predictions
+        std::vector<AllocationResult> mlEnhancedAllocation;
+        double totalWeight = 0.0;
+
+        for (const auto& baselineAlloc : baselineResult.allocations) {
+            AllocationResult mlAllocation = baselineAlloc;
+
+            // Get ML prediction for this asset
+            auto predIt = mlPredictions.find(baselineAlloc.symbol);
+            double mlSignal = 0.0;
+            if (predIt != mlPredictions.end()) {
+                mlSignal = predIt->second;  // ML predicted return
+            }
+
+            // Combine baseline weight with ML signal
+            // Positive ML signals increase allocation, negative signals decrease it
+            double mlAdjustment = 1.0 + (mlSignal * mlWeight);
+            mlAllocation.targetWeight = baselineAlloc.targetWeight * mlAdjustment;
+
+            // Ensure minimum allocation
+            mlAllocation.targetWeight = std::max(mlAllocation.targetWeight, constraints_.minPositionWeight);
+
+            mlAllocation.expectedReturn = baselineAlloc.expectedReturn + mlSignal;
+            mlAllocation.rationale = "ML-Enhanced: Baseline risk parity + ML prediction ("
+                                   + std::to_string(mlSignal * 100) + "% signal)";
+
+            mlEnhancedAllocation.push_back(mlAllocation);
+            totalWeight += mlAllocation.targetWeight;
+        }
+
+        // Step 5: Normalize weights to sum to 1.0 and apply constraints
+        if (totalWeight > 0.0) {
+            for (auto& allocation : mlEnhancedAllocation) {
+                allocation.targetWeight /= totalWeight;
+
+                // Apply maximum weight constraints
+                allocation.targetWeight = std::min(allocation.targetWeight, constraints_.maxPositionWeight);
+
+                // Calculate rebalance amounts
+                allocation.rebalanceAmount = (allocation.targetWeight - allocation.currentWeight)
+                                           * portfolio.getTotalValue();
+            }
+        }
+
+        // Step 6: Build final result
+        result.allocations = mlEnhancedAllocation;
+        result.expectedPortfolioReturn = calculateExpectedReturn(mlEnhancedAllocation);
+        result.expectedPortfolioRisk = calculatePortfolioRisk(mlEnhancedAllocation);
+        result.sharpeRatio = calculateSharpeRatio(mlEnhancedAllocation);
+        result.diversificationRatio = calculateDiversificationRatio(mlEnhancedAllocation);
+
+        // Check if rebalancing is needed
+        result.requiresRebalancing = false;
+        for (const auto& allocation : mlEnhancedAllocation) {
+            if (std::abs(allocation.targetWeight - allocation.currentWeight) > 0.01) { // 1% threshold
+                result.requiresRebalancing = true;
+                break;
+            }
+        }
+
+        // Apply final constraints
+        result = applyConstraints(result, portfolio);
+
+        // Add ML-specific information to rationale
+        std::ostringstream mlInfo;
+        mlInfo << "ML signals range: ";
+        if (!mlPredictions.empty()) {
+            auto minMax = std::minmax_element(mlPredictions.begin(), mlPredictions.end(),
+                [](const auto& a, const auto& b) { return a.second < b.second; });
+            mlInfo << std::fixed << std::setprecision(3)
+                   << minMax.first->second * 100 << "% to "
+                   << minMax.second->second * 100 << "%";
+        }
+
+        result.warnings.push_back("ML-Enhanced optimization with " + std::to_string(availableAssets.size()) +
+                                " assets and " + std::to_string(int(mlWeight * 100)) + "% ML weight");
+        result.warnings.push_back(mlInfo.str());
+
+    } catch (const std::exception& e) {
+        logOptimizationWarning("ML-Enhanced optimization error: " + std::string(e.what()), result);
+    }
+
+    return result;
+}
+
+// === CORRELATION-AWARE OPTIMIZATION IMPLEMENTATIONS (Day 9) ===
+
+OptimizationResult PortfolioOptimizer::optimizePortfolio_CorrelationAware(
+    const Portfolio& portfolio,
+    const std::vector<Position>& currentPositions,
+    const std::vector<std::string>& availableAssets,
+    const std::shared_ptr<CryptoClaude::Analytics::CrossAssetCorrelationMonitor>& correlationMonitor,
+    double correlationWeight) {
+
+    OptimizationResult result;
+    result.optimizationMethod = "Correlation-Aware";
+    result.timestamp = std::chrono::system_clock::now();
+
+    try {
+        if (!correlationMonitor) {
+            logOptimizationWarning("Correlation monitor not available", result);
+            return optimizePortfolio_RiskParity(portfolio, currentPositions, availableAssets);
+        }
+
+        // Start with Risk Parity baseline
+        auto baseWeights = calculateRiskParityWeights(availableAssets);
+
+        // Apply correlation-based adjustment
+        auto correlationAdjustedWeights = applyCorrelationAdjustment(
+            availableAssets, baseWeights, correlationMonitor, correlationWeight);
+
+        // Convert to allocation results
+        result.allocations = convertWeightsToAllocations(
+            availableAssets, correlationAdjustedWeights, currentPositions, portfolio);
+
+        // Calculate portfolio metrics
+        result.expectedPortfolioRisk = calculatePortfolioRisk(result.allocations);
+        result.expectedPortfolioReturn = calculateExpectedReturn(result.allocations);
+        result.sharpeRatio = calculateSharpeRatio(result.allocations);
+        result.diversificationRatio = calculateDiversificationRatio(result.allocations);
+
+        // Apply constraints
+        result = applyConstraints(result, portfolio);
+
+        // Check rebalancing needs
+        result.requiresRebalancing = shouldRebalance(portfolio, currentPositions, result);
+        if (result.requiresRebalancing) {
+            result.totalRebalanceCost = calculateTotalRebalancingCost(result.allocations);
+        }
+
+        // Add correlation-specific information
+        auto currentStress = correlationMonitor->getCurrentMarketStress();
+        auto correlations = correlationMonitor->getCurrentCorrelations();
+
+        result.warnings.push_back("Correlation-aware optimization with " +
+                                std::to_string(correlations.size()) + " correlation pairs monitored");
+        result.warnings.push_back("Market stress level: " + std::to_string(currentStress * 100) + "%");
+        result.warnings.push_back("Correlation weight: " + std::to_string(correlationWeight * 100) + "%");
+
+        // Add risk recommendations
+        auto riskRecommendations = correlationMonitor->getRiskRecommendations();
+        result.warnings.insert(result.warnings.end(), riskRecommendations.begin(), riskRecommendations.end());
+
+    } catch (const std::exception& e) {
+        logOptimizationWarning("Correlation-aware optimization error: " + std::string(e.what()), result);
+        return optimizePortfolio_RiskParity(portfolio, currentPositions, availableAssets);
+    }
+
+    return result;
+}
+
+OptimizationResult PortfolioOptimizer::optimizePortfolio_EnsembleML(
+    const Portfolio& portfolio,
+    const std::vector<Position>& currentPositions,
+    const std::vector<std::string>& availableAssets,
+    const std::shared_ptr<CryptoClaude::ML::EnsembleMLPredictor>& ensemblePredictor,
+    double ensembleWeight) {
+
+    OptimizationResult result;
+    result.optimizationMethod = "Ensemble ML-Enhanced";
+    result.timestamp = std::chrono::system_clock::now();
+
+    try {
+        if (!ensemblePredictor || !ensemblePredictor->validateEnsemble()) {
+            logOptimizationWarning("Ensemble predictor not available or invalid", result);
+            return optimizePortfolio_RiskParity(portfolio, currentPositions, availableAssets);
+        }
+
+        // Start with Risk Parity baseline
+        auto baseWeights = calculateRiskParityWeights(availableAssets);
+
+        // Integrate ensemble ML predictions
+        auto mlEnhancedWeights = integrateEnsemblePredictions(
+            availableAssets, baseWeights, ensemblePredictor, ensembleWeight);
+
+        // Convert to allocation results
+        result.allocations = convertWeightsToAllocations(
+            availableAssets, mlEnhancedWeights, currentPositions, portfolio);
+
+        // Calculate portfolio metrics
+        result.expectedPortfolioRisk = calculatePortfolioRisk(result.allocations);
+        result.expectedPortfolioReturn = calculateExpectedReturn(result.allocations);
+        result.sharpeRatio = calculateSharpeRatio(result.allocations);
+        result.diversificationRatio = calculateDiversificationRatio(result.allocations);
+
+        // Apply constraints
+        result = applyConstraints(result, portfolio);
+
+        // Check rebalancing needs
+        result.requiresRebalancing = shouldRebalance(portfolio, currentPositions, result);
+        if (result.requiresRebalancing) {
+            result.totalRebalanceCost = calculateTotalRebalancingCost(result.allocations);
+        }
+
+        // Add ensemble-specific information
+        auto ensembleMetrics = ensemblePredictor->getEnsembleMetrics();
+        auto activeModels = ensemblePredictor->getActiveModels();
+
+        result.warnings.push_back("Ensemble ML optimization with " +
+                                std::to_string(activeModels.size()) + " active models");
+        result.warnings.push_back("Ensemble confidence: " +
+                                std::to_string(ensembleMetrics.average_confidence * 100) + "%");
+        result.warnings.push_back("Model consensus rate: " +
+                                std::to_string(ensembleMetrics.consensus_rate * 100) + "%");
+        result.warnings.push_back("Ensemble weight: " + std::to_string(ensembleWeight * 100) + "%");
+
+        // Add model-specific warnings if available
+        for (const auto& warning : ensembleMetrics.ensemble_warnings) {
+            result.warnings.push_back("Ensemble: " + warning);
+        }
+
+    } catch (const std::exception& e) {
+        logOptimizationWarning("Ensemble ML optimization error: " + std::string(e.what()), result);
+        return optimizePortfolio_RiskParity(portfolio, currentPositions, availableAssets);
+    }
+
+    return result;
+}
+
+OptimizationResult PortfolioOptimizer::optimizePortfolio_RegimeAware(
+    const Portfolio& portfolio,
+    const std::vector<Position>& currentPositions,
+    const std::vector<std::string>& availableAssets,
+    const std::shared_ptr<CryptoClaude::ML::CorrelationMLEnhancer>& correlationEnhancer,
+    const CryptoClaude::ML::CorrelationRegime& currentRegime) {
+
+    OptimizationResult result;
+    result.optimizationMethod = "Regime-Aware";
+    result.timestamp = std::chrono::system_clock::now();
+
+    try {
+        if (!correlationEnhancer) {
+            logOptimizationWarning("Correlation ML enhancer not available", result);
+            return optimizePortfolio_RiskParity(portfolio, currentPositions, availableAssets);
+        }
+
+        // Choose base strategy based on regime
+        std::vector<double> baseWeights;
+        std::string baseStrategy;
+
+        switch (currentRegime) {
+            case CryptoClaude::ML::CorrelationRegime::RISK_OFF:
+                // In risk-off regimes, emphasize diversification and reduce concentration
+                baseWeights = maximizeDiversificationRatio(availableAssets);
+                baseStrategy = "Max Diversification (Risk-Off)";
+                break;
+
+            case CryptoClaude::ML::CorrelationRegime::RISK_ON:
+                // In risk-on regimes, can be more aggressive with momentum
+                baseWeights = calculateVolatilityScaling(availableAssets, false); // Momentum-based
+                baseStrategy = "Volatility Scaled (Risk-On)";
+                break;
+
+            case CryptoClaude::ML::CorrelationRegime::DECOUPLING:
+                // During decoupling, crypto-specific strategies work better
+                baseWeights = calculateRiskParityWeights(availableAssets);
+                baseStrategy = "Risk Parity (Decoupling)";
+                break;
+
+            case CryptoClaude::ML::CorrelationRegime::FLIGHT_TO_QUALITY:
+                // Flight to quality - reduce risk, increase quality assets
+                baseWeights = calculateVolatilityScaling(availableAssets, true); // Inverse vol
+                baseStrategy = "Inverse Volatility (Flight to Quality)";
+                break;
+
+            case CryptoClaude::ML::CorrelationRegime::NORMAL:
+            default:
+                // Normal regime - balanced approach
+                baseWeights = calculateRiskParityWeights(availableAssets);
+                baseStrategy = "Risk Parity (Normal)";
+                break;
+        }
+
+        // Apply regime-specific adjustments
+        auto regimeAdjustedWeights = applyRegimeAdjustment(availableAssets, baseWeights, currentRegime);
+
+        // Convert to allocation results
+        result.allocations = convertWeightsToAllocations(
+            availableAssets, regimeAdjustedWeights, currentPositions, portfolio);
+
+        // Calculate portfolio metrics
+        result.expectedPortfolioRisk = calculatePortfolioRisk(result.allocations);
+        result.expectedPortfolioReturn = calculateExpectedReturn(result.allocations);
+        result.sharpeRatio = calculateSharpeRatio(result.allocations);
+        result.diversificationRatio = calculateDiversificationRatio(result.allocations);
+
+        // Apply constraints
+        result = applyConstraints(result, portfolio);
+
+        // Check rebalancing needs
+        result.requiresRebalancing = shouldRebalance(portfolio, currentPositions, result);
+        if (result.requiresRebalancing) {
+            result.totalRebalanceCost = calculateTotalRebalancingCost(result.allocations);
+        }
+
+        // Add regime-specific information
+        std::string regimeStr = CryptoClaude::ML::CorrelationMLUtils::regimeToString(currentRegime);
+
+        result.warnings.push_back("Regime-aware optimization for regime: " + regimeStr);
+        result.warnings.push_back("Base strategy: " + baseStrategy);
+
+        // Get regime analysis from correlation enhancer
+        auto regimeResult = correlationEnhancer->analyzeCurrentRegime();
+        result.warnings.push_back("Regime confidence: " +
+                                std::to_string(regimeResult.regime_confidence * 100) + "%");
+        result.warnings.push_back("Regime stability: " +
+                                std::to_string(regimeResult.regime_stability_score * 100) + "%");
+
+        // Add regime indicators
+        for (const auto& indicator : regimeResult.regime_indicators) {
+            result.warnings.push_back("Regime indicator: " + indicator);
+        }
+
+    } catch (const std::exception& e) {
+        logOptimizationWarning("Regime-aware optimization error: " + std::string(e.what()), result);
+        return optimizePortfolio_RiskParity(portfolio, currentPositions, availableAssets);
+    }
+
+    return result;
+}
+
+// === CORRELATION-AWARE HELPER IMPLEMENTATIONS ===
+
+std::vector<double> PortfolioOptimizer::applyCorrelationAdjustment(
+    const std::vector<std::string>& assets,
+    const std::vector<double>& baseWeights,
+    const std::shared_ptr<CryptoClaude::Analytics::CrossAssetCorrelationMonitor>& correlationMonitor,
+    double correlationWeight) {
+
+    if (!correlationMonitor || baseWeights.size() != assets.size()) {
+        return baseWeights;
+    }
+
+    std::vector<double> adjustedWeights = baseWeights;
+
+    try {
+        // Get cross-asset risk adjustments
+        auto riskAdjustments = calculateCrossAssetRiskAdjustment(assets, correlationMonitor);
+
+        // Apply correlation-based weight adjustments
+        for (size_t i = 0; i < assets.size(); ++i) {
+            if (i < riskAdjustments.size()) {
+                // Higher risk adjustment = lower weight
+                double adjustment = 1.0 - (riskAdjustments[i] * correlationWeight);
+                adjustment = std::max(0.5, std::min(1.5, adjustment)); // Limit adjustment range
+                adjustedWeights[i] *= adjustment;
+            }
+        }
+
+        // Renormalize weights
+        double totalWeight = std::accumulate(adjustedWeights.begin(), adjustedWeights.end(), 0.0);
+        if (totalWeight > 0) {
+            for (double& weight : adjustedWeights) {
+                weight /= totalWeight;
+            }
+        }
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error in correlation adjustment: " << e.what() << std::endl;
+        return baseWeights; // Return original weights on error
+    }
+
+    return adjustedWeights;
+}
+
+std::vector<double> PortfolioOptimizer::integrateEnsemblePredictions(
+    const std::vector<std::string>& assets,
+    const std::vector<double>& baseWeights,
+    const std::shared_ptr<CryptoClaude::ML::EnsembleMLPredictor>& ensemblePredictor,
+    double ensembleWeight) {
+
+    if (!ensemblePredictor || baseWeights.size() != assets.size()) {
+        return baseWeights;
+    }
+
+    std::vector<double> mlEnhancedWeights = baseWeights;
+
+    try {
+        // Create feature vectors for each asset (simplified)
+        std::map<std::string, CryptoClaude::ML::MLFeatureVector> features;
+        for (const auto& asset : assets) {
+            CryptoClaude::ML::MLFeatureVector feature;
+            feature.symbol = asset;
+
+            // Use available market data to populate features
+            auto marketIt = marketData_.find(asset);
+            if (marketIt != marketData_.end()) {
+                // Populate basic features from market data
+                feature.sma_5_ratio = 1.0;  // Would calculate from actual data
+                feature.sma_20_ratio = 1.0;
+                feature.rsi_14 = 50.0;
+                feature.volatility_10 = 0.02;
+                feature.volume_ratio = 1.0;
+                feature.price_momentum_3 = 0.0;
+                feature.price_momentum_7 = 0.0;
+            }
+
+            auto sentimentIt = sentimentData_.find(asset);
+            if (sentimentIt != sentimentData_.end()) {
+                feature.news_sentiment = sentimentIt->second.getSentimentScore();
+            }
+
+            features[asset] = feature;
+        }
+
+        // Get ensemble predictions
+        auto predictions = ensemblePredictor->getEnsemblePredictionsForOptimization(assets, features);
+
+        // Apply ML predictions to adjust weights
+        for (size_t i = 0; i < assets.size(); ++i) {
+            const std::string& asset = assets[i];
+            auto predIt = predictions.find(asset);
+
+            if (predIt != predictions.end()) {
+                double prediction = predIt->second;
+
+                // Convert prediction to weight adjustment
+                double mlAdjustment = 1.0 + (prediction * ensembleWeight);
+                mlAdjustment = std::max(0.5, std::min(2.0, mlAdjustment)); // Limit adjustment range
+
+                mlEnhancedWeights[i] *= mlAdjustment;
+            }
+        }
+
+        // Renormalize weights
+        double totalWeight = std::accumulate(mlEnhancedWeights.begin(), mlEnhancedWeights.end(), 0.0);
+        if (totalWeight > 0) {
+            for (double& weight : mlEnhancedWeights) {
+                weight /= totalWeight;
+            }
+        }
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error integrating ensemble predictions: " << e.what() << std::endl;
+        return baseWeights;
+    }
+
+    return mlEnhancedWeights;
+}
+
+std::vector<double> PortfolioOptimizer::applyRegimeAdjustment(
+    const std::vector<std::string>& assets,
+    const std::vector<double>& baseWeights,
+    const CryptoClaude::ML::CorrelationRegime& regime) {
+
+    std::vector<double> adjustedWeights = baseWeights;
+
+    try {
+        // Apply regime-specific adjustments
+        switch (regime) {
+            case CryptoClaude::ML::CorrelationRegime::RISK_OFF:
+                // In risk-off, reduce concentration and increase diversification
+                for (size_t i = 0; i < adjustedWeights.size(); ++i) {
+                    if (adjustedWeights[i] > 0.15) { // Reduce large positions
+                        adjustedWeights[i] *= 0.8;
+                    }
+                }
+                break;
+
+            case CryptoClaude::ML::CorrelationRegime::RISK_ON:
+                // In risk-on, allow more concentration in momentum assets
+                // Find assets with higher recent returns and increase their weights
+                for (size_t i = 0; i < assets.size() && i < adjustedWeights.size(); ++i) {
+                    auto marketIt = marketData_.find(assets[i]);
+                    if (marketIt != marketData_.end()) {
+                        // Simple momentum check (would be more sophisticated)
+                        if (marketIt->second.getPrice() > marketIt->second.getPrice() * 0.95) { // 5% recent gain
+                            adjustedWeights[i] *= 1.2; // Increase weight
+                        }
+                    }
+                }
+                break;
+
+            case CryptoClaude::ML::CorrelationRegime::FLIGHT_TO_QUALITY:
+                // In flight to quality, favor less volatile assets
+                for (size_t i = 0; i < assets.size() && i < adjustedWeights.size(); ++i) {
+                    auto volatilityIt = volatilities_.find(assets[i]);
+                    if (volatilityIt != volatilities_.end()) {
+                        if (volatilityIt->second < 0.03) { // Lower volatility threshold
+                            adjustedWeights[i] *= 1.3; // Favor stable assets
+                        } else if (volatilityIt->second > 0.06) {
+                            adjustedWeights[i] *= 0.7; // Reduce volatile assets
+                        }
+                    }
+                }
+                break;
+
+            case CryptoClaude::ML::CorrelationRegime::DECOUPLING:
+                // During decoupling, all weights can be relatively equal
+                // No specific adjustment needed for equal treatment
+                break;
+
+            case CryptoClaude::ML::CorrelationRegime::NORMAL:
+            case CryptoClaude::ML::CorrelationRegime::MIXED_SIGNALS:
+            default:
+                // No adjustment for normal or mixed regimes
+                break;
+        }
+
+        // Renormalize weights
+        double totalWeight = std::accumulate(adjustedWeights.begin(), adjustedWeights.end(), 0.0);
+        if (totalWeight > 0) {
+            for (double& weight : adjustedWeights) {
+                weight /= totalWeight;
+            }
+        }
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error applying regime adjustment: " << e.what() << std::endl;
+        return baseWeights;
+    }
+
+    return adjustedWeights;
+}
+
+std::vector<double> PortfolioOptimizer::calculateCrossAssetRiskAdjustment(
+    const std::vector<std::string>& assets,
+    const std::shared_ptr<CryptoClaude::Analytics::CrossAssetCorrelationMonitor>& correlationMonitor) {
+
+    std::vector<double> riskAdjustments(assets.size(), 0.0);
+
+    if (!correlationMonitor) return riskAdjustments;
+
+    try {
+        // Get current market stress level
+        double marketStress = correlationMonitor->getCurrentMarketStress();
+
+        // Get current correlations
+        auto correlations = correlationMonitor->getCurrentCorrelations();
+
+        for (size_t i = 0; i < assets.size(); ++i) {
+            double assetRiskAdjustment = 0.0;
+
+            // Find correlations for this asset
+            for (const auto& correlation : correlations) {
+                if (correlation.pair.crypto_symbol == assets[i]) {
+
+                    // Higher correlation with traditional assets during stress = higher risk
+                    double correlationRisk = std::abs(correlation.correlation) * marketStress;
+
+                    // Correlation spikes and regime changes increase risk
+                    if (correlation.correlation_spike) {
+                        correlationRisk += 0.2; // 20% additional risk
+                    }
+                    if (correlation.regime_change) {
+                        correlationRisk += 0.15; // 15% additional risk
+                    }
+
+                    assetRiskAdjustment = std::max(assetRiskAdjustment, correlationRisk);
+                }
+            }
+
+            // Cap risk adjustment at reasonable levels
+            riskAdjustments[i] = std::min(0.5, assetRiskAdjustment);
+        }
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error calculating cross-asset risk adjustment: " << e.what() << std::endl;
+    }
+
+    return riskAdjustments;
+}
+
+// Helper function to convert weights to allocation results (would be in the existing codebase)
+std::vector<AllocationResult> PortfolioOptimizer::convertWeightsToAllocations(
+    const std::vector<std::string>& assets,
+    const std::vector<double>& weights,
+    const std::vector<Position>& currentPositions,
+    const Portfolio& portfolio) {
+
+    std::vector<AllocationResult> allocations;
+
+    for (size_t i = 0; i < assets.size() && i < weights.size(); ++i) {
+        AllocationResult allocation;
+        allocation.symbol = assets[i];
+        allocation.targetWeight = weights[i];
+
+        // Find current weight
+        allocation.currentWeight = 0.0;
+        for (const auto& position : currentPositions) {
+            if (position.getSymbol() == assets[i]) {
+                double positionValue = position.getQuantity() * position.getCurrentPrice();
+                double totalPortfolioValue = portfolio.getTotalValue();
+                allocation.currentWeight = (totalPortfolioValue > 0) ? (positionValue / totalPortfolioValue) : 0.0;
+                break;
+            }
+        }
+
+        allocation.rebalanceAmount = allocation.targetWeight - allocation.currentWeight;
+        allocation.expectedReturn = expectedReturns_.count(assets[i]) ? expectedReturns_[assets[i]] : 0.0;
+        allocation.riskContribution = calculateRiskContribution(assets[i], allocations);
+        allocation.rationale = "Correlation-aware optimization";
+
+        allocations.push_back(allocation);
+    }
+
+    return allocations;
+}
+
+// Helper function to calculate total rebalancing cost (would be in existing codebase)
+double PortfolioOptimizer::calculateTotalRebalancingCost(const std::vector<AllocationResult>& allocations) {
+    double totalCost = 0.0;
+
+    for (const auto& allocation : allocations) {
+        if (std::abs(allocation.rebalanceAmount) > 0.01) { // Only if meaningful rebalancing
+            totalCost += calculateTransactionCost(std::abs(allocation.rebalanceAmount), allocation.symbol);
+        }
+    }
+
+    return totalCost;
 }
 
 } // namespace Optimization

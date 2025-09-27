@@ -84,7 +84,12 @@ config.json
 secrets.conf
 *.key
 *.pem
+api-keys.conf
+deploy-package.tar.gz
+secrets/
 
 # Keep templates and examples
 !config.template.json
 !example.conf
+!*.template
+!api-keys.conf.template

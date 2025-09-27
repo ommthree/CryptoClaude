@@ -125,7 +125,7 @@ public:
     std::vector<EnhancedTradingSignal> generateMLSignals(
         const std::string& symbol,
         const std::vector<FeatureEngineering::FeatureVector>& features,
-        const std::vector<MachineLearning::DailyPrediction>& predictions);
+        const std::vector<ML::EnsemblePrediction>& predictions);
 
     // Multi-asset and cross-correlation signals
     std::vector<EnhancedTradingSignal> generateCrossAssetSignals(

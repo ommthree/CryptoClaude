@@ -14,10 +14,11 @@ This document defines the target functionality for the CryptoClaude trading plat
 ### Core System Components
 1. **Trading Engine:** Automated long-short pair trading execution
 2. **Prediction Model:** Random Forest with sentiment analysis and technical factors
-3. **Risk Management:** Real-time portfolio and pair-level risk monitoring
-4. **Data Pipeline:** Continuous market and news data ingestion
+3. **Risk Management:** Real-time portfolio and pair-level risk monitoring with VaR and stress testing
+4. **Data Pipeline:** Continuous market and news data ingestion with smart caching
 5. **Reporting System:** Comprehensive performance and risk analytics
 6. **Console Interface:** Command-line interface for system control and monitoring
+7. **Personal API Integration:** Smart caching and API conservation for personal-use optimization ✅ **NEW**
 
 ## Console Interface Functionality
 
@@ -68,10 +69,12 @@ reset parameters [--category CATEGORY]
 
 #### Trading Control
 ```
-trading on
+trading on [--mode personal|professional]
 ```
 **Purpose:** Enable automated trading execution
-**Output:** Trading activation confirmation, current portfolio status
+**Parameters:**
+- `--mode`: Trading mode (personal: conservative limits, professional: full features) ✅ **ENHANCED**
+**Output:** Trading activation confirmation, current portfolio status, active risk limits
 
 ```
 trading off
@@ -87,6 +90,56 @@ liquidate [--symbol SYMBOL] [--pair PAIR_ID]
 - `--symbol`: Liquidate specific coin positions
 - `--pair`: Liquidate specific trading pair
 **Output:** Liquidation execution status, realized P&L impact
+
+```
+personal-limits [--show|--update]
+```
+**Purpose:** Manage personal trading limits and constraints ✅ **NEW**
+**Parameters:**
+- `--show`: Display current personal limits
+- `--update`: Interactive update of personal risk parameters
+**Output:**
+- Current personal risk limits (2% per trade, 5% portfolio, 3 max positions)
+- API usage constraints and optimization settings
+- Personal ML pipeline configuration and performance thresholds
+
+```
+volatility-limits [--show|--update]
+```
+**Purpose:** Manage volatility-based position limits and controls ✅ **NEW**
+**Parameters:**
+- `--show`: Display current volatility limits and regime classifications
+- `--update`: Interactive update of volatility sensitivity and downweighting parameters
+**Output:**
+- Current volatility regime classifications (LOW/NORMAL/HIGH/EXTREME)
+- Downweighting factors and position size limits
+- Volatility trend analysis and regime adaptation settings
+
+```
+claude-features [--show|--test|--configure]
+```
+**Purpose:** Monitor and configure Claude AI feature generation ✅ **NEW**
+**Parameters:**
+- `--show`: Display current Claude AI features and confidence scores
+- `--test`: Test Claude API connectivity and feature generation
+- `--configure`: Update Claude API settings and safety parameters
+**Output:**
+- 15 Claude AI features with confidence scores
+- Feature validation status and bounds checking
+- API usage statistics and rate limiting status
+
+```
+safety-limits [--show|--test|--emergency-override]
+```
+**Purpose:** Monitor and test multi-layer safety control systems ✅ **NEW**
+**Parameters:**
+- `--show`: Display all active safety limits and circuit breaker status
+- `--test`: Execute safety limit testing with simulated extreme scenarios
+- `--emergency-override`: Emergency override procedures (requires confirmation)
+**Output:**
+- Hard-coded safety limits status (35% max adjustment ceiling)
+- Circuit breaker status and trigger history
+- Sanity check alerts and audit trail
 
 #### Historical Testing & Simulation
 
@@ -307,6 +360,7 @@ data status
 - Data completeness metrics by symbol
 - Recent data quality alerts
 - Data provider backup status
+- Smart cache performance metrics (hit rate, storage usage) ✅ **ENHANCED**
 
 ```
 data gaps [--days DAYS]
@@ -318,6 +372,20 @@ data gaps [--days DAYS]
 - Missing data periods by symbol and data type
 - Data quality score by symbol
 - Recommended actions for data issues
+- Cache efficiency analysis and optimization recommendations ✅ **ENHANCED**
+
+```
+cache-stats [--detailed] [--breakdown]
+```
+**Purpose:** Smart cache performance monitoring ✅ **NEW**
+**Parameters:**
+- `--detailed`: Show comprehensive cache metrics
+- `--breakdown`: Break down stats by cache type (historical, realtime, news)
+**Output:**
+- Cache hit rate by data type
+- Storage usage and compression efficiency
+- API calls saved and cost reduction metrics
+- Performance optimization recommendations
 
 ### Advanced Analytics Commands
 
@@ -476,13 +544,68 @@ pairs analysis
 **Example Library:** Built-in examples for complex commands and analysis scenarios
 **Error Resolution:** Context-sensitive help for error conditions and system issues
 
+### Future GUI Integration (Planned Enhancement) ✅ **STRATEGIC ROADMAP**
+
+#### Web-Based Dashboard Interface
+**Primary Purpose:** Provide intuitive visual interface for monitoring and parameter management
+**Implementation Timeline:** Post-console interface completion (Week 5+)
+
+**Core Dashboard Components:**
+1. **Real-Time Portfolio Monitoring**
+   - Live position tracking with P&L visualization
+   - Risk metrics dashboard with VaR and correlation heatmaps
+   - Trading activity feed with execution quality metrics
+
+2. **Volatility Management Interface** ✅ **NEW FEATURE**
+   - **Volatility Regime Visualization:** Real-time regime classification with historical transitions
+   - **Downweighting Control Panel:** Tunable sensitivity parameters with live impact preview
+   - **Position Size Optimizer:** Interactive volatility-based position sizing with scenario analysis
+   - **Regime Transition Alerts:** Visual alerts for volatility regime changes
+
+3. **Claude AI Feature Monitoring** ✅ **NEW FEATURE**
+   - **AI Feature Dashboard:** Real-time Claude AI feature values with confidence indicators
+   - **Feature Performance Analytics:** Historical accuracy and feature importance trends
+   - **API Usage Monitoring:** Claude API call statistics and cost tracking
+   - **Feature Validation Status:** Bounds checking and extreme value detection alerts
+
+4. **Multi-Layer Safety Control Interface** ✅ **NEW FEATURE**
+   - **Safety Limits Dashboard:** Hard-coded limit status with proximity alerts
+   - **Circuit Breaker Control Panel:** Emergency shutdown controls with manual override
+   - **Sanity Check Log:** Historical adjustment review with audit trail
+   - **Emergency Procedures:** One-click emergency liquidation and system shutdown
+
+5. **Parameter Management Interface**
+   - **Interactive Parameter Tuning:** Real-time parameter adjustment with backtesting preview
+   - **Scenario Testing:** Monte Carlo simulation with parameter sensitivity analysis
+   - **Configuration Profiles:** Save/load parameter sets for different market regimes
+
+6. **Advanced Analytics Visualization**
+   - **Performance Attribution:** Interactive charts showing volatility impact and Claude AI contribution
+   - **Risk Decomposition:** Multi-dimensional risk analysis with volatility correlation
+   - **Market Regime Analysis:** Historical regime performance with strategy adaptation
+
+**Technical Implementation:**
+- **Frontend Framework:** React.js with real-time WebSocket connections
+- **Backend Integration:** REST API with existing console interface
+- **Data Visualization:** D3.js and Chart.js for financial charting
+- **Security:** OAuth authentication with role-based access control
+
+**GUI Benefits:**
+- **Enhanced Monitoring:** Visual pattern recognition for volatility regimes and Claude AI feature trends
+- **Faster Response:** Immediate visual alerts for safety limit approaches and regime transitions
+- **Better Decision Making:** Interactive scenario analysis for parameter optimization
+- **Improved Accessibility:** Non-technical stakeholder access to system monitoring
+
+**Implementation Priority:** Medium - Provides significant operational value after core console functionality is stable
+
 ---
 
-**Target State Status:** Complete specification - Ready for Project Owner Approval
-**Dependencies:** Algorithm specification (approved), database schema (pending)
-**Implementation Priority:** Core console interface and trading control functionality first
+**Target State Status:** Complete specification with enhanced safety and volatility features - Ready for Project Owner Approval
+**Dependencies:** Algorithm specification (approved), database schema (completed), Claude AI integration (implemented), volatility management (implemented)
+**Implementation Priority:** Core console interface and trading control functionality first, followed by GUI dashboard
 
 *Document Owner: SDM*
 *Approval Authority: Project Owner*
 *Created: Setup Phase*
+*Last Updated: September 27, 2025 - Enhanced with volatility controls, Claude AI features, and multi-layer safety systems*
 *Modification Rights: Project Owner Only*

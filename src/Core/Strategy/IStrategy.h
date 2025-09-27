@@ -1,6 +1,6 @@
 #pragma once
 #include "../Database/Models/PortfolioData.h"
-#include "../MachineLearning/PredictionService.h"
+#include "../ML/EnsembleMLPredictor.h"
 #include <vector>
 #include <string>
 #include <chrono>
@@ -81,11 +81,11 @@ public:
     virtual std::vector<TradingSignal> generateSignals(
         const std::string& currentDate,
         const Database::Models::Portfolio& currentPortfolio,
-        const std::vector<MachineLearning::DailyPrediction>& predictions) = 0;
+        const std::vector<ML::EnsemblePrediction>& predictions) = 0;
 
     virtual bool shouldRebalance(
         const Database::Models::Portfolio& portfolio,
-        const std::vector<MachineLearning::DailyPrediction>& predictions) = 0;
+        const std::vector<ML::EnsemblePrediction>& predictions) = 0;
 
     // Strategy configuration
     virtual void setParameters(const std::map<std::string, double>& parameters) = 0;

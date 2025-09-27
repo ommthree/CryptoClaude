@@ -60,13 +60,48 @@ CORE_SOURCES = src/Core/Database/DatabaseManager.cpp \
                src/Core/Database/DataQualityManager.cpp \
                src/Core/Json/JsonHelper.cpp \
                src/Core/Http/HttpClient.cpp \
-               src/Core/Utils/HttpClient.cpp
+               src/Core/Utils/HttpClient.cpp \
+               src/Core/Analytics/StatisticalTools.cpp
+
+# Day 6 Advanced Components
+DAY6_SOURCES = src/Core/Analytics/BacktestingEngine.cpp \
+               src/Core/Analytics/TechnicalIndicators.cpp \
+               src/Core/Analytics/PerformanceAttributionEngine.cpp \
+               src/Core/Strategy/HistoricalValidator.cpp \
+               src/Core/Trading/PaperTradingEngine.cpp \
+               src/Core/Monitoring/PaperTradingMonitor.cpp \
+               src/Core/Testing/MarketScenarioSimulator.cpp \
+               src/Core/Testing/EdgeCaseSimulator.cpp
+
+# Day 7 Portfolio Optimization Components
+DAY7_SOURCES = src/Core/Portfolio/PortfolioOptimizer.cpp
+
+# Day 8 Machine Learning Components
+DAY8_SOURCES = src/Core/ML/RandomForestPredictor.cpp
+
+# Day 9 Ensemble ML and Cross-Asset Correlation Components
+DAY9_SOURCES = src/Core/Analytics/CrossAssetCorrelationMonitor.cpp \
+               src/Core/ML/CorrelationMLEnhancer.cpp \
+               src/Core/ML/EnsembleMLPredictor.cpp
+
+# Day 10 Trading Engine Components
+DAY10_SOURCES = src/Core/Trading/TradingEngine.cpp \
+                src/Core/Risk/PredictiveRiskEngine.cpp
+
+# All Source Files
+ALL_SOURCES = $(CORE_SOURCES) $(DAY6_SOURCES) $(DAY7_SOURCES) $(DAY8_SOURCES) $(DAY9_SOURCES) $(DAY10_SOURCES)
 
 # Object Files
 CORE_OBJECTS = $(CORE_SOURCES:.cpp=.o)
+DAY6_OBJECTS = $(DAY6_SOURCES:.cpp=.o)
+DAY7_OBJECTS = $(DAY7_SOURCES:.cpp=.o)
+DAY8_OBJECTS = $(DAY8_SOURCES:.cpp=.o)
+DAY9_OBJECTS = $(DAY9_SOURCES:.cpp=.o)
+DAY10_OBJECTS = $(DAY10_SOURCES:.cpp=.o)
+ALL_OBJECTS = $(ALL_SOURCES:.cpp=.o)
 
 # Test Programs
-TESTS = SimpleValidatorTest
+TESTS = SimpleValidatorTest Day6BacktestingAndTradingTest Day7PortfolioOptimizationTest Day8RandomForestTest Day9EnsembleMLTest Day10TradingEngineTest Day10TradingEngineValidation
 
 # Default Target
 all: check-dependencies $(TESTS)
@@ -97,6 +132,42 @@ check-dependencies:
 SimpleValidatorTest: SimpleValidatorTest.cpp $(CORE_OBJECTS)
 	@echo "🔨 Building SimpleValidatorTest..."
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $< $(CORE_OBJECTS) $(LIBS) -o $@
+
+# Day 6 Comprehensive Backtesting and Trading Test
+Day6BacktestingAndTradingTest: Day6BacktestingAndTradingTest.cpp $(ALL_OBJECTS)
+	@echo "🔨 Building Day6BacktestingAndTradingTest..."
+	@echo "🎯 Compiling comprehensive Day 6 backtesting and paper trading test suite..."
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $< $(ALL_OBJECTS) $(LIBS) -o $@
+
+# Day 7 Portfolio Optimization Test
+Day7PortfolioOptimizationTest: Day7PortfolioOptimizationTest.cpp $(ALL_OBJECTS)
+	@echo "🔨 Building Day7PortfolioOptimizationTest..."
+	@echo "📊 Compiling comprehensive Day 7 portfolio optimization and ML foundation test suite..."
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $< $(ALL_OBJECTS) $(LIBS) -o $@
+
+# Day 8 Random Forest ML Test
+Day8RandomForestTest: Day8RandomForestTest.cpp $(ALL_OBJECTS)
+	@echo "🔨 Building Day8RandomForestTest..."
+	@echo "🧠 Compiling comprehensive Day 8 Random Forest ML integration test suite..."
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $< $(ALL_OBJECTS) $(LIBS) -o $@
+
+# Day 9 Ensemble ML and Cross-Asset Correlation Test
+Day9EnsembleMLTest: tests/Day9EnsembleMLTest.cpp $(ALL_OBJECTS)
+	@echo "🔨 Building Day9EnsembleMLTest..."
+	@echo "🔗 Compiling comprehensive Day 9 Ensemble ML and Cross-Asset Correlation integration test suite..."
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $< $(ALL_OBJECTS) $(LIBS) -o $@
+
+# Day 10 Trading Engine Test
+Day10TradingEngineTest: tests/Day10TradingEngineTest_Simple.cpp $(ALL_OBJECTS)
+	@echo "🔨 Building Day10TradingEngineTest..."
+	@echo "⚡ Compiling Day 10 Trading Engine core functionality test suite..."
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $< $(ALL_OBJECTS) $(LIBS) -o $@
+
+# Day 10 Trading Engine Independent Validation
+Day10TradingEngineValidation: Day10TradingEngineValidation.cpp $(ALL_OBJECTS)
+	@echo "🔨 Building Day10TradingEngineValidation..."
+	@echo "🔍 Compiling Day 10 Trading Engine independent validation suite..."
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $< $(ALL_OBJECTS) $(LIBS) -o $@
 
 # ProperSecurityTest removed - functionality replaced by ProductionSecurityTest
 
@@ -141,10 +212,46 @@ test: all test-json
 	@echo "🧪 Running all validation tests..."
 	@./SimpleValidatorTest && echo "✅ SimpleValidatorTest passed" || echo "❌ SimpleValidatorTest failed"
 
+# Run Day 6 comprehensive test
+test-day6: Day6BacktestingAndTradingTest
+	@echo "🎯 Running Day 6 Comprehensive Backtesting and Paper Trading Test..."
+	@echo "⚡ Testing: Backtesting Engine, Risk Validation, Paper Trading, Performance Monitoring, Market Scenarios, Edge Cases"
+	@./Day6BacktestingAndTradingTest && echo "✅ Day 6 Comprehensive Test Suite PASSED" || echo "❌ Day 6 Test Suite FAILED"
+
+# Run Day 7 portfolio optimization test
+test-day7: Day7PortfolioOptimizationTest
+	@echo "📊 Running Day 7 Portfolio Optimization and ML Foundation Test..."
+	@echo "⚡ Testing: Portfolio Optimization, Risk Parity, Volatility Weighting, Sentiment Integration"
+	@./Day7PortfolioOptimizationTest && echo "✅ Day 7 Portfolio Optimization Test Suite PASSED" || echo "❌ Day 7 Test Suite FAILED"
+
+# Run Day 8 Random Forest ML test
+test-day8: Day8RandomForestTest
+	@echo "🧠 Running Day 8 Random Forest ML Integration Test..."
+	@echo "⚡ Testing: Random Forest Predictor, Feature Engineering, ML-Enhanced Portfolio Optimization"
+	@./Day8RandomForestTest && echo "✅ Day 8 Random Forest ML Test Suite PASSED" || echo "❌ Day 8 Test Suite FAILED"
+
+# Run Day 9 Ensemble ML and Cross-Asset Correlation test
+test-day9: Day9EnsembleMLTest
+	@echo "🔗 Running Day 9 Ensemble ML and Cross-Asset Correlation Test..."
+	@echo "⚡ Testing: Cross-Asset Correlation Monitor, ML-Enhanced Correlation Analysis, Ensemble ML Predictor, Correlation-Aware Optimization"
+	@./Day9EnsembleMLTest && echo "✅ Day 9 Ensemble ML and Cross-Asset Correlation Test Suite PASSED" || echo "❌ Day 9 Test Suite FAILED"
+
+# Run Day 10 Trading Engine test
+test-day10: Day10TradingEngineTest
+	@echo "⚡ Running Day 10 Trading Engine Test..."
+	@echo "🎯 Testing: Trading Engine Core Operations, Pair-based Trading Strategy, Risk Management, Order Execution, Portfolio Optimization"
+	@./Day10TradingEngineTest && echo "✅ Day 10 Trading Engine Test Suite PASSED" || echo "❌ Day 10 Test Suite FAILED"
+
+# Run Day 10 Trading Engine independent validation
+validate-day10: Day10TradingEngineValidation
+	@echo "🔍 Running Day 10 Trading Engine Independent Validation..."
+	@echo "📋 Comprehensive production-readiness validation with detailed reporting"
+	@./Day10TradingEngineValidation && echo "✅ Day 10 Independent Validation PASSED" || echo "❌ Day 10 Independent Validation FAILED"
+
 # Clean up
 clean:
 	@echo "🧹 Cleaning up..."
-	rm -f $(CORE_OBJECTS) $(TESTS) *.db
+	rm -f $(ALL_OBJECTS) $(TESTS) *.db
 
 # Install dependencies
 install-deps:
@@ -158,10 +265,23 @@ help:
 	@echo "Targets:"
 	@echo "  all              - Build all test programs"
 	@echo "  test             - Run all validation tests"
+	@echo "  test-day6        - Run Day 6 comprehensive backtesting and paper trading test"
+	@echo "  test-day7        - Run Day 7 portfolio optimization and ML foundation test"
+	@echo "  test-day8        - Run Day 8 Random Forest ML integration test"
+	@echo "  test-day9        - Run Day 9 Ensemble ML and cross-asset correlation test"
+	@echo "  test-day10       - Run Day 10 Trading Engine integration test"
+	@echo "  validate-day10   - Run Day 10 Trading Engine independent validation"
 	@echo "  test-json        - Test JSON functionality specifically"
 	@echo "  install-deps     - Install required dependencies"
 	@echo "  clean            - Remove build artifacts"
 	@echo "  help             - Show this help message"
+	@echo ""
+	@echo "Day 6-10 Advanced Components:"
+	@echo "  Day 6 - Backtesting Engine, Risk Validation, Paper Trading, Market Scenarios"
+	@echo "  Day 7 - Portfolio Optimization, Risk Parity, Volatility Weighting, Sentiment Integration"
+	@echo "  Day 8 - Random Forest ML Predictor, Feature Engineering, ML-Enhanced Optimization"
+	@echo "  Day 9 - Cross-Asset Correlation Monitor, Ensemble ML, Correlation-Aware Optimization"
+	@echo "  Day 10 - Trading Engine, Pair-based Strategy, Order Execution, Risk Management"
 	@echo ""
 	@echo "Dependencies:"
 	@echo "  - g++ compiler (C++17 support required)"
@@ -170,4 +290,4 @@ help:
 	@echo ""
 	@echo "To install dependencies: make install-deps"
 
-.PHONY: all check-dependencies test-json test clean install-deps help
+.PHONY: all check-dependencies test-json test test-day6 test-day7 test-day8 test-day9 test-day10 validate-day10 clean install-deps help

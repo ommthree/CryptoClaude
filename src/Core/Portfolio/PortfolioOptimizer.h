@@ -4,6 +4,10 @@
 #include "../Database/Models/MarketData.h"
 #include "../Database/Models/SentimentData.h"
 #include "../../Configuration/Config.h"
+#include "../ML/RandomForestPredictor.h"
+#include "../Analytics/CrossAssetCorrelationMonitor.h"
+#include "../ML/EnsembleMLPredictor.h"
+#include "../ML/CorrelationMLEnhancer.h"
 #include <vector>
 #include <map>
 #include <string>
@@ -142,6 +146,46 @@ public:
         const std::vector<std::string>& availableAssets
     );
 
+    // === ML-ENHANCED OPTIMIZATION ===
+
+    // ML-Enhanced optimization using Random Forest predictions
+    OptimizationResult optimizePortfolio_MLEnhanced(
+        const Portfolio& portfolio,
+        const std::vector<Position>& currentPositions,
+        const std::vector<std::string>& availableAssets,
+        CryptoClaude::ML::RandomForestPredictor& predictor,
+        double mlWeight = 0.6 // Weight to give to ML predictions vs baseline allocation
+    );
+
+    // === CORRELATION-AWARE OPTIMIZATION (Day 9 Enhancement) ===
+
+    // Correlation-aware optimization using cross-asset correlation intelligence
+    OptimizationResult optimizePortfolio_CorrelationAware(
+        const Portfolio& portfolio,
+        const std::vector<Position>& currentPositions,
+        const std::vector<std::string>& availableAssets,
+        const std::shared_ptr<CryptoClaude::Analytics::CrossAssetCorrelationMonitor>& correlationMonitor,
+        double correlationWeight = 0.4 // Weight to give to correlation adjustment vs baseline
+    );
+
+    // Ensemble ML-Enhanced optimization using multiple models including correlation ML
+    OptimizationResult optimizePortfolio_EnsembleML(
+        const Portfolio& portfolio,
+        const std::vector<Position>& currentPositions,
+        const std::vector<std::string>& availableAssets,
+        const std::shared_ptr<CryptoClaude::ML::EnsembleMLPredictor>& ensemblePredictor,
+        double ensembleWeight = 0.7 // Weight to give to ensemble predictions
+    );
+
+    // Regime-aware optimization adapting to correlation regime changes
+    OptimizationResult optimizePortfolio_RegimeAware(
+        const Portfolio& portfolio,
+        const std::vector<Position>& currentPositions,
+        const std::vector<std::string>& availableAssets,
+        const std::shared_ptr<CryptoClaude::ML::CorrelationMLEnhancer>& correlationEnhancer,
+        const CryptoClaude::ML::CorrelationRegime& currentRegime
+    );
+
     // === REBALANCING INTELLIGENCE ===
 
     // Check if rebalancing is needed
@@ -244,6 +288,37 @@ private:
     // Maximum diversification ratio optimization
     std::vector<double> maximizeDiversificationRatio(const std::vector<std::string>& assets);
 
+    // === CORRELATION-AWARE OPTIMIZATION HELPERS ===
+
+    // Correlation-based weight adjustment
+    std::vector<double> applyCorrelationAdjustment(
+        const std::vector<std::string>& assets,
+        const std::vector<double>& baseWeights,
+        const std::shared_ptr<CryptoClaude::Analytics::CrossAssetCorrelationMonitor>& correlationMonitor,
+        double correlationWeight
+    );
+
+    // Ensemble ML predictions integration
+    std::vector<double> integrateEnsemblePredictions(
+        const std::vector<std::string>& assets,
+        const std::vector<double>& baseWeights,
+        const std::shared_ptr<CryptoClaude::ML::EnsembleMLPredictor>& ensemblePredictor,
+        double ensembleWeight
+    );
+
+    // Regime-based allocation adjustment
+    std::vector<double> applyRegimeAdjustment(
+        const std::vector<std::string>& assets,
+        const std::vector<double>& baseWeights,
+        const CryptoClaude::ML::CorrelationRegime& regime
+    );
+
+    // Cross-asset risk adjustment based on traditional asset correlations
+    std::vector<double> calculateCrossAssetRiskAdjustment(
+        const std::vector<std::string>& assets,
+        const std::shared_ptr<CryptoClaude::Analytics::CrossAssetCorrelationMonitor>& correlationMonitor
+    );
+
     // === REBALANCING LOGIC ===
 
     // Threshold-based rebalancing check
@@ -300,6 +375,15 @@ private:
     // Error handling and validation
     bool validateInputData(const std::vector<std::string>& assets);
     void logOptimizationWarning(const std::string& warning, OptimizationResult& result);
+
+    // Weight conversion and cost calculation utilities
+    std::vector<AllocationResult> convertWeightsToAllocations(
+        const std::vector<std::string>& assets,
+        const std::vector<double>& weights,
+        const std::vector<Position>& currentPositions,
+        const Portfolio& portfolio
+    );
+    double calculateTotalRebalancingCost(const std::vector<AllocationResult>& allocations);
 };
 
 // === IMPLEMENTATION OF KEY METHODS ===

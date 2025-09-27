@@ -1,0 +1,207 @@
+{
+  "last_save": 1758893889,
+  "parameters": {
+    "algo.confidence_threshold": {
+      "category": "Algorithm Tuning",
+      "default": "0.750000",
+      "description": "Algorithm confidence threshold for dynamic concentration",
+      "max": 0.95,
+      "min": 0.5,
+      "type": 0,
+      "value": "0.750000"
+    },
+    "algo.correlation_threshold": {
+      "category": "Algorithm Tuning",
+      "default": "0.870000",
+      "description": "Minimum correlation threshold for pair inclusion",
+      "max": 0.95,
+      "min": 0.7,
+      "type": 0,
+      "value": "0.800000"
+    },
+    "algo.max_pairs": {
+      "category": "Algorithm Tuning",
+      "default": "50",
+      "description": "Maximum number of trading pairs",
+      "max": 100.0,
+      "min": 10.0,
+      "type": 1,
+      "value": "50"
+    },
+    "algo.min_pairs": {
+      "category": "Algorithm Tuning",
+      "default": "3",
+      "description": "Minimum number of trading pairs",
+      "max": 10.0,
+      "min": 1.0,
+      "type": 1,
+      "value": "3"
+    },
+    "algo.rebalance_threshold": {
+      "category": "Algorithm Tuning",
+      "default": "0.050000",
+      "description": "Portfolio rebalancing threshold",
+      "max": 0.2,
+      "min": 0.01,
+      "type": 0,
+      "value": "0.050000"
+    },
+    "api.enable_caching": {
+      "category": "API Configuration",
+      "default": "true",
+      "description": "Enable API response caching",
+      "type": 2,
+      "value": "true"
+    },
+    "api.max_retries": {
+      "category": "API Configuration",
+      "default": "3",
+      "description": "Maximum API request retries",
+      "max": 10.0,
+      "min": 1.0,
+      "type": 1,
+      "value": "3"
+    },
+    "api.request_timeout_ms": {
+      "category": "API Configuration",
+      "default": "10000",
+      "description": "API request timeout in milliseconds",
+      "max": 60000.0,
+      "min": 1000.0,
+      "type": 1,
+      "value": "10000"
+    },
+    "correlation.adjust_for_regime_change": {
+      "category": "Correlation Analysis",
+      "default": "true",
+      "description": "Adjust correlations for market regime changes",
+      "type": 2,
+      "value": "true"
+    },
+    "correlation.rolling_window": {
+      "category": "Correlation Analysis",
+      "default": "60.000000",
+      "description": "Rolling correlation window in days",
+      "max": 250.0,
+      "min": 20.0,
+      "type": 0,
+      "value": "60.000000"
+    },
+    "correlation.statistical_significance": {
+      "category": "Correlation Analysis",
+      "default": "0.050000",
+      "description": "Statistical significance level",
+      "max": 0.1,
+      "min": 0.01,
+      "type": 0,
+      "value": "0.050000"
+    },
+    "data.lookback_days": {
+      "category": "Data Processing",
+      "default": "730",
+      "description": "Historical data lookback period",
+      "max": 2000.0,
+      "min": 90.0,
+      "type": 1,
+      "value": "730"
+    },
+    "data.min_observations": {
+      "category": "Data Processing",
+      "default": "100",
+      "description": "Minimum observations required for analysis",
+      "max": 500.0,
+      "min": 30.0,
+      "type": 1,
+      "value": "100"
+    },
+    "data.quality_threshold": {
+      "category": "Data Processing",
+      "default": "0.950000",
+      "description": "Minimum data quality threshold",
+      "max": 1.0,
+      "min": 0.8,
+      "type": 0,
+      "value": "0.950000"
+    },
+    "perf.benchmark_correlation": {
+      "category": "Performance Monitoring",
+      "default": "0.300000",
+      "description": "Target correlation with benchmark",
+      "max": 1.0,
+      "min": -1.0,
+      "type": 0,
+      "value": "0.300000"
+    },
+    "perf.reporting_frequency_days": {
+      "category": "Performance Monitoring",
+      "default": "7",
+      "description": "Performance reporting frequency",
+      "max": 30.0,
+      "min": 1.0,
+      "type": 1,
+      "value": "7"
+    },
+    "portfolio.enable_sector_constraints": {
+      "category": "Portfolio Optimization",
+      "default": "true",
+      "description": "Enable sector-based constraints",
+      "type": 2,
+      "value": "true"
+    },
+    "portfolio.sharpe_ratio_target": {
+      "category": "Portfolio Optimization",
+      "default": "1.500000",
+      "description": "Target Sharpe ratio",
+      "max": 3.0,
+      "min": 0.5,
+      "type": 0,
+      "value": "1.500000"
+    },
+    "portfolio.target_volatility": {
+      "category": "Portfolio Optimization",
+      "default": "0.150000",
+      "description": "Target portfolio volatility",
+      "max": 0.5,
+      "min": 0.05,
+      "type": 0,
+      "value": "0.250000"
+    },
+    "risk.max_position_size": {
+      "category": "Risk Management",
+      "default": "0.250000",
+      "description": "Maximum position size as fraction of portfolio",
+      "max": 1.0,
+      "min": 0.01,
+      "type": 0,
+      "value": "0.350000"
+    },
+    "risk.max_sector_exposure": {
+      "category": "Risk Management",
+      "default": "0.250000",
+      "description": "Maximum exposure to any single sector",
+      "max": 0.5,
+      "min": 0.05,
+      "type": 0,
+      "value": "0.300000"
+    },
+    "risk.var_confidence_level": {
+      "category": "Risk Management",
+      "default": "0.950000",
+      "description": "VaR confidence level",
+      "max": 0.99,
+      "min": 0.9,
+      "type": 0,
+      "value": "0.950000"
+    },
+    "risk.var_lookback_days": {
+      "category": "Risk Management",
+      "default": "252",
+      "description": "VaR calculation lookback period in days",
+      "max": 1000.0,
+      "min": 30.0,
+      "type": 1,
+      "value": "252"
+    }
+  },
+  "profile": 2
+}

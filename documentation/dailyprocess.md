@@ -3,10 +3,18 @@
 ## Overview
 This document defines the standard daily development workflow for the CryptoClaude project, ensuring consistent quality gates and progress tracking.
 
-## Process Authority
-**Owner:** SDM (orchestration and enforcement)
+**Note on Time Constraints:** Time constraints are not important within reason - prioritize getting the full job done correctly over artificial time limits.
+
+## Process Authority & Agent Roles
+**Process Owner:** SDM (orchestration and enforcement)
 **Modification Rights:** Project Owner only
 **Execution Frequency:** Every development day
+
+### Agent Responsibilities
+**Planning:** SDM (Software Development Manager)
+**Coding/Implementation:** Developer
+**Validation:** Validator
+**Library Filing:** Librarian
 
 ## Daily Workflow Stages
 
@@ -49,7 +57,7 @@ This document defines the standard daily development workflow for the CryptoClau
 **Process:**
 1. TRS reviews dayplan.md for algorithm impact
 2. TRS assesses risk implications of proposed changes
-3. TRS generates tradval.md report with concerns/recommendations
+3. TRS generates day#trsvalidation.md report with concerns/recommendations
 4. Project Owner reviews TRS report and approves/modifies plan
 
 #### Direct Approval
@@ -59,10 +67,10 @@ This document defines the standard daily development workflow for the CryptoClau
 2. Project Owner reviews and approves daily plan
 3. Development stage authorized to begin
 
-### Stage 3: Development Execution (Developer Autonomous)
+### Stage 3: Development Execution
 
 #### Implementation Phase
-**Responsibility:** Developer
+**Agent:** Developer
 **Authority:** Autonomous execution within approved plan boundaries
 **Activities:**
 1. Execute daily tasks as defined in dayplan.md
@@ -86,72 +94,35 @@ This document defines the standard daily development workflow for the CryptoClau
 3. Developer notes any deviations or issues encountered
 4. Developer escalates to SDM if plan modifications needed
 
-### Stage 4: Comprehensive Daily Validation (Validator)
+### Stage 4: Implementation Validation
 
-#### Enhanced Validation Framework - "No Shortcuts Policy"
+#### Core Validation Mission
+**Agent:** Validator
 **Time Allocation:** 45-90 minutes (quality over speed)
-**Principle:** **NEVER simplify tests to avoid failures - identify and document real issues**
+**Core Challenge:** Provide robust independent validation that implementation matches plans and requirements
 
-#### Critical Validation Areas
+#### Validation Focus Areas
+The Validator agent should bring a rigorous independent challenge to:
+- **Plan Alignment:** Does the implementation match the daily plan, weekly plan, business requirements and target state?
+- **Code Quality:** Is it correctly coded, robust, compileable, runnable, correctly integrated?
+- **Technical Standards:** Are all interfaces, dependencies, and integrations working properly?
+- **Production Readiness:** Can this code actually run in a real environment?
 
-##### 1. **Dependency Integrity Validation** - MANDATORY
-**Process:**
-1. **External Dependencies:** Verify all `#include` statements resolve correctly
-   - Check for missing libraries (nlohmann/json, boost, etc.)
-   - Validate system dependencies are installed
-   - Document any missing dependencies as BLOCKERS
-2. **Internal Dependencies:** Verify all internal includes exist
-   - Check for missing .cpp implementation files
-   - Validate header-only libraries have complete implementations
-   - Flag any "header-only" components that should have implementations
+#### Validation Guidelines (Shortened)
 
-##### 2. **Database Integration Validation** - MANDATORY
-**Process:**
-1. **Method Compatibility:** Verify all database method calls exist
-   - Check DatabaseManager interface matches usage
-   - Identify calls to non-existent methods (executeParameterizedQuery, etc.)
-   - Test with actual database operations, not mocked versions
-2. **Migration System:** Test database schema migrations
-   - Attempt actual migration execution
-   - Document migration failures as CRITICAL issues
-   - Never bypass migrations - fix the underlying problem
-3. **SQL Security:** Review all database queries for security issues
-   - Flag string concatenation in SQL queries as SQL INJECTION RISK
-   - Require prepared statements for all parameterized queries
+**Key Validation Areas:**
+1. **Dependencies:** All external/internal dependencies available and working
+2. **Compilation:** Code compiles fully with all real dependencies
+3. **Database Integration:** All database calls use correct interfaces, no SQL injection
+4. **Functional Testing:** End-to-end testing with real functionality (no mocks)
+5. **Architecture Consistency:** Interfaces match implementations, patterns work correctly
 
-##### 3. **Compilation Reality Check** - MANDATORY
-**Process:**
-1. **Full Compilation:** Compile ALL code without shortcuts
-   - Include all dependencies and headers
-   - No conditional compilation to bypass errors
-   - Document all compilation failures with full error details
-2. **Implementation Completeness:** Verify implementation files exist
-   - Check that all header declarations have corresponding implementations
-   - Flag missing .cpp files as CRITICAL BLOCKERS
-   - Validate function implementations, not just declarations
-
-##### 4. **Functional Reality Testing** - MANDATORY
-**Process:**
-1. **End-to-End Testing:** Test actual functionality, not mock operations
-   - Use real API calls where possible (with test keys)
-   - Test actual file I/O operations
-   - Verify database operations with real data
-2. **Error Path Validation:** Test failure scenarios
-   - Network failures, invalid API responses
-   - Database connection failures
-   - Missing configuration scenarios
-3. **No Simplification Policy:** If a test fails, document the failure - don't simplify the test
-
-##### 5. **Architecture Consistency Validation** - MANDATORY
-**Process:**
-1. **Interface Compatibility:** Verify all interfaces match implementations
-   - Check method signatures match between headers and implementations
-   - Validate return types and parameter types
-   - Test actual method calls, not simplified versions
-2. **Design Pattern Integrity:** Ensure architectural patterns are properly implemented
-   - Singleton patterns properly implemented
-   - Factory patterns create actual objects
-   - Observer patterns have functional notification systems
+**Critical "No Shortcuts" Policy:**
+- Don't simplify tests to make them pass - document real issues
+- Use actual dependencies, not mocked versions
+- Test real functionality, not demo versions
+- Document all missing files as BLOCKERS
+- Escalate security vulnerabilities immediately
 
 #### Validation Process
 
@@ -181,7 +152,7 @@ This document defines the standard daily development workflow for the CryptoClau
 
 #### Enhanced Validation Reporting
 
-**Output:** validation.md (comprehensive daily review)
+**Output:** day#validation.md (comprehensive daily review)
 **Required Contents:**
 
 ```markdown
@@ -316,7 +287,7 @@ This document defines the standard daily development workflow for the CryptoClau
 **Process:**
 1. TRS reviews implemented algorithm modifications
 2. TRS assesses performance and risk implications
-3. TRS generates light tradval.md report focusing on:
+3. TRS generates light day#trsvalidation.md report focusing on:
    - Algorithm logic correctness
    - Risk calculation accuracy
    - Performance impact assessment
@@ -327,8 +298,8 @@ This document defines the standard daily development workflow for the CryptoClau
 #### Report Review
 **Responsibility:** Project Owner
 **Process:**
-1. Review validation.md report for technical issues
-2. Review tradval.md report (if algorithm changes made)
+1. Review day#validation.md report for technical issues
+2. Review day#trsvalidation.md report (if algorithm changes made)
 3. Assess overall daily progress against success criteria
 4. Determine if iteration with Developer is required
 
@@ -340,11 +311,57 @@ This document defines the standard daily development workflow for the CryptoClau
 3. Validator re-runs applicable portions of validation
 4. Process repeats until validation approvals obtained
 
-### Stage 6.5: Git Commit and Version Control (Developer)
+### Stage 6.5: File Organization and Documentation Cleanup
+
+#### File Organization Review
+**Agent:** Librarian
+**Authority:** File organization within safety guidelines, SDM approval for risky moves
+**Duration:** 15-20 minutes
+
+**Process:**
+1. **Non-.md File Organization Check:**
+   - Review all non-.md files against filing.md structure specifications
+   - Identify files in incorrect locations or with incorrect names
+   - Move/rename files following safety guidelines:
+     - ✅ **Move without approval**: Log files, temporary files, build artifacts, archive files
+     - ⚠️ **SDM approval required**: Source files (.cpp/.h), config files, database files, executables
+   - Document any moves made and approvals requested
+
+2. **.md File Correction and Consolidation:**
+   - Identify .md files with incorrect naming per md.md standards
+   - Correct naming errors (e.g., `validation_report.md` → `day#validation.md`)
+   - Identify orphaned .md files not in approved md.md list
+   - Consolidate orphaned content into appropriate approved .md files
+   - **Request approval for uncertain consolidations**
+
+3. **.md File Content Review and Cleanup:**
+   - Review each .md file for proper structure consistency
+   - Identify and remove:
+     - Extreme bloat and unnecessary repetition
+     - Contradictory information between files
+     - Confusing or unclear sections
+   - Make modest, careful adjustments:
+     - ✅ **Safe changes**: Formatting consistency, minor bloat removal, typo corrections
+     - ⚠️ **Request approval**: Structural changes, content modifications, section reorganization
+
+#### Librarian Reporting
+**Output:** Brief file organization summary (added to day#validation.md or separate note)
+**Contents:**
+- Files moved/renamed and safety justification
+- .md files corrected and consolidation actions taken
+- Content cleanup performed
+- Items requiring SDM approval (with recommendations)
+
+**Escalation Process:**
+1. **Uncertain consolidation**: "I found orphaned content about [topic] in [file]. Should this be merged with [target file] or handled differently?"
+2. **Risky file moves**: "File [filename] appears misplaced but moving it might break [system]. SDM approval requested."
+3. **Structural changes**: "Document [filename] has [issue]. Proposed change: [description]. Approval requested."
+
+### Stage 7: Git Commit and Version Control
 
 #### Commit Authorization
-**Trigger:** All validations approved and Project Owner approval obtained
-**Responsibility:** Developer
+**Agent:** Developer
+**Trigger:** All validations approved, Project Owner approval obtained, and Librarian cleanup completed
 **Process:**
 1. Stage all daily deliverables and changes using `git add`
 2. Review staged changes with `git status` and `git diff --staged`
@@ -402,7 +419,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 3. Validate commit message and content with `git show --name-status`
 4. Update commit hash in daily documentation if required
 
-### Stage 7: Progress Documentation (Developer + SDM)
+### Stage 8: Progress Documentation (Developer + SDM)
 
 #### Developer Updates
 **Responsibility:** Developer
@@ -420,7 +437,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 3. Update target architecture if modifications approved
 4. Assess impact on future planning and make adjustments
 
-### Stage 8: Day Transition
+### Stage 9: Day Transition
 
 #### End-of-Day Assessment
 **Responsibility:** SDM

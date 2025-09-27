@@ -33,7 +33,7 @@ This document defines the one-time setup process for establishing the structured
 1. SDM reviews existing codebase and archived planning documents
 2. SDM requests clarifications on trading strategy from Project Owner
 3. SDM drafts comprehensive algorithm specification
-4. TRS reviews algo.md and provides tradval.md report
+4. TRS reviews algo.md and provides initial TRS validation report
 5. Project Owner reviews TRS feedback and approves/modifies algo.md
 6. Document locked to Project Owner authority
 

@@ -710,7 +710,6 @@ double TradingEngine::estimateTransactionCosts(const std::vector<TradeOrder>& tr
 
 double TradingEngine::calculateExpectedBenefit(const std::vector<TargetPosition>& targets) {
     double expectedBenefit = 0.0;
-    double portfolioValue = currentPortfolio_.getTotalValue();
 
     for (const auto& target : targets) {
         Position pos = getPositionForSymbol(target.symbol);
@@ -778,6 +777,374 @@ void TradingEngine::executeOrderBatch(std::vector<TradeOrder>& orders) {
 
     logTradingAction("BATCH_EXECUTION_COMPLETE",
         "Batch execution completed");
+}
+
+// === HELPER METHODS ===
+
+std::string TradingEngine::generateOrderId() {
+    static int orderCounter = 1;
+    auto now = std::chrono::system_clock::now();
+    auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+    return "ORD_" + std::to_string(timestamp) + "_" + std::to_string(orderCounter++);
+}
+
+double TradingEngine::getCurrentPrice(const std::string& symbol) {
+    auto it = latestMarketData_.find(symbol);
+    if (it != latestMarketData_.end()) {
+        return it->second.getPrice();
+    }
+
+    // Default price for unknown symbols (simulation/testing)
+    if (symbol == "BTC") return 45000.0;
+    if (symbol == "ETH") return 3000.0;
+    if (symbol == "ADA") return 1.2;
+    if (symbol == "SOL") return 100.0;
+    if (symbol == "DOT") return 25.0;
+
+    return 100.0; // Default fallback price
+}
+
+double TradingEngine::estimateSlippage(const std::string& symbol, double quantity) {
+    // Simple slippage model based on quantity and typical spreads
+    double baseSlippageBps = 5.0; // 5 basis points base slippage
+
+    // Adjust for quantity - larger orders have more slippage
+    double quantityMultiplier = 1.0 + std::abs(quantity) / 1000.0; // 0.1% per $1000
+
+    // Adjust for symbol liquidity
+    double liquidityMultiplier = 1.0;
+    if (symbol == "BTC" || symbol == "ETH") {
+        liquidityMultiplier = 0.8; // More liquid, less slippage
+    } else if (symbol == "ADA" || symbol == "SOL") {
+        liquidityMultiplier = 1.2; // Less liquid, more slippage
+    } else {
+        liquidityMultiplier = 1.5; // Unknown coins, higher slippage
+    }
+
+    return baseSlippageBps * quantityMultiplier * liquidityMultiplier / 10000.0; // Convert to decimal
+}
+
+bool TradingEngine::isSystemHealthy() {
+    // Check if we have recent market data
+    auto now = std::chrono::system_clock::now();
+    bool hasRecentData = false;
+
+    for (const auto& [symbol, data] : latestMarketData_) {
+        auto age = std::chrono::duration_cast<std::chrono::minutes>(now - data.getTimestamp()).count();
+        if (age <= 30) { // Data less than 30 minutes old
+            hasRecentData = true;
+            break;
+        }
+    }
+
+    // Check portfolio state
+    bool portfolioValid = currentPortfolio_.getTotalValue() > 0;
+
+    // Check for emergency conditions
+    bool noEmergencyStop = !emergencyStop_;
+
+    // Check drawdown limits
+    bool drawdownOk = currentDrawdown_ < params_.portfolioDrawdownStop;
+
+    return hasRecentData && portfolioValid && noEmergencyStop && drawdownOk;
+}
+
+void TradingEngine::logTradingAction(const std::string& action, const std::string& details) {
+    auto now = std::chrono::system_clock::now();
+    auto timestamp = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+
+    std::cout << "[" << timestamp << "] TRADING_ACTION: " << action << " - " << details << std::endl;
+
+    // Store recent actions for system health monitoring
+    if (riskAlerts_.size() > 100) {
+        riskAlerts_.erase(riskAlerts_.begin());
+    }
+    riskAlerts_.push_back(action + ": " + details);
+}
+
+bool TradingEngine::hasRecentMarketData(const std::string& symbol, int maxAgeMinutes) {
+    auto it = latestMarketData_.find(symbol);
+    if (it == latestMarketData_.end()) {
+        return false;
+    }
+
+    auto now = std::chrono::system_clock::now();
+    auto age = std::chrono::duration_cast<std::chrono::minutes>(now - it->second.getTimestamp()).count();
+    return age <= maxAgeMinutes;
+}
+
+void TradingEngine::processFilledOrders() {
+    auto it = pendingOrders_.begin();
+    while (it != pendingOrders_.end()) {
+        if (it->status == TradeOrder::OrderStatus::FILLED) {
+            // Move to history
+            orderHistory_.push_back(*it);
+
+            // Update position
+            updatePositionFromOrder(*it);
+
+            // Remove from pending
+            it = pendingOrders_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    // Limit order history size
+    if (orderHistory_.size() > 1000) {
+        orderHistory_.erase(orderHistory_.begin(), orderHistory_.begin() + 100);
+    }
+}
+
+Position TradingEngine::getPositionForSymbol(const std::string& symbol) {
+    for (auto& position : currentPositions_) {
+        if (position.getSymbol() == symbol) {
+            return position;
+        }
+    }
+    // Return default empty position if not found
+    Position emptyPosition("", 0.0, 0.0, true);
+    return emptyPosition;
+}
+
+void TradingEngine::activateEmergencyStop(const std::string& reason) {
+    emergencyStop_ = true;
+    logTradingAction("EMERGENCY_STOP_ACTIVATED", "Reason: " + reason);
+
+    // Add to risk alerts
+    riskAlerts_.push_back("EMERGENCY STOP: " + reason);
+
+    std::cout << "🚨 EMERGENCY STOP ACTIVATED: " << reason << std::endl;
+}
+
+void TradingEngine::validateConfiguration() {
+    if (!params_.validateConfiguration()) {
+        throw std::invalid_argument("Invalid strategy parameters");
+    }
+
+    // Additional validation
+    if (params_.maxPairsToCreate > 50) {
+        throw std::invalid_argument("Too many pairs requested");
+    }
+
+    if (params_.cashBufferPercentage < 0.05) {
+        throw std::invalid_argument("Cash buffer too low");
+    }
+}
+
+double TradingEngine::calculatePositionWeight(const Position& position) {
+    double portfolioValue = currentPortfolio_.getTotalValue();
+    if (portfolioValue <= 0) return 0.0;
+
+    double positionValue = position.getQuantity() * position.getCurrentPrice();
+    return positionValue / portfolioValue;
+}
+
+void TradingEngine::updatePositionFromOrder(const TradeOrder& order) {
+    Position existingPosition = getPositionForSymbol(order.symbol);
+
+    if (!existingPosition.getSymbol().empty()) {
+        // Update existing position
+        for (auto& position : currentPositions_) {
+            if (position.getSymbol() == order.symbol) {
+                double currentQuantity = position.getQuantity();
+                double newQuantity = currentQuantity + (order.type == TradeOrder::OrderType::MARKET_BUY ||
+                                                       order.type == TradeOrder::OrderType::LIMIT_BUY ?
+                                                       order.executedQuantity : -order.executedQuantity);
+
+                position.setQuantity(newQuantity);
+                position.setCurrentPrice(order.averageExecutedPrice);
+                break;
+            }
+        }
+    } else {
+        // Create new position
+        bool isLong = (order.type == TradeOrder::OrderType::MARKET_BUY ||
+                      order.type == TradeOrder::OrderType::LIMIT_BUY);
+
+        Position newPosition(order.symbol, order.executedQuantity, order.averageExecutedPrice, isLong);
+        currentPositions_.push_back(newPosition);
+    }
+}
+
+void TradingEngine::initializeDefaultParameters() {
+    // Initialize trading universe with default values
+    tradingUniverse_.eligibleSymbols = {"BTC", "ETH", "ADA", "SOL", "DOT", "AVAX", "LINK", "UNI"};
+    tradingUniverse_.maxUniverseSize = 100;
+    tradingUniverse_.targetPortfolioSize = 15;
+    tradingUniverse_.minLiquidityScore = 0.6;
+    tradingUniverse_.minModelR2 = 0.15;
+    tradingUniverse_.maxSpreadBps = 50.0;
+    tradingUniverse_.minVolumeUSD = 10000000.0;
+
+    // Initialize default liquidity scores
+    for (const auto& symbol : tradingUniverse_.eligibleSymbols) {
+        if (symbol == "BTC" || symbol == "ETH") {
+            tradingUniverse_.liquidityScores[symbol] = 0.95;
+            tradingUniverse_.averageSpreads[symbol] = 5.0;
+            tradingUniverse_.averageVolumes[symbol] = 1000000000.0;
+        } else {
+            tradingUniverse_.liquidityScores[symbol] = 0.75;
+            tradingUniverse_.averageSpreads[symbol] = 15.0;
+            tradingUniverse_.averageVolumes[symbol] = 100000000.0;
+        }
+        tradingUniverse_.modelPerformance[symbol] = 0.25;
+        tradingUniverse_.shortingAllowed[symbol] = true;
+    }
+}
+
+// === REPORTING AND ANALYTICS ===
+
+TradingEngine::TradingReport TradingEngine::generateTradingReport() {
+    TradingReport report;
+
+    // Basic portfolio info
+    report.portfolioValue = currentPortfolio_.getTotalValue();
+    report.reportTimestamp = std::chrono::system_clock::now();
+
+    // Calculate daily P&L
+    report.dailyPnL = 0.0;
+    for (const auto& position : currentPositions_) {
+        // Simplified P&L calculation
+        double positionPnL = position.getQuantity() *
+                           (position.getCurrentPrice() - position.getEntryPrice());
+        report.dailyPnL += positionPnL;
+    }
+
+    // Current drawdown
+    report.currentDrawdown = currentDrawdown_;
+
+    // Portfolio volatility (simplified calculation)
+    report.portfolioVolatility = 0.15; // Default 15% volatility
+
+    // Exposure calculations
+    report.totalLongExposure = 0.0;
+    report.totalShortExposure = 0.0;
+
+    for (const auto& position : currentPositions_) {
+        double positionValue = std::abs(position.getQuantity() * position.getCurrentPrice());
+        if (position.getQuantity() > 0) {
+            report.totalLongExposure += positionValue;
+        } else {
+            report.totalShortExposure += positionValue;
+        }
+    }
+
+    // Copy current targets and recent orders
+    report.currentTargets = currentTargets_;
+    if (orderHistory_.size() > 10) {
+        report.recentOrders.assign(orderHistory_.end() - 10, orderHistory_.end());
+    } else {
+        report.recentOrders = orderHistory_;
+    }
+
+    // Active alerts
+    report.activeAlerts = riskAlerts_;
+
+    // Performance metrics (simplified)
+    report.sharpeRatio = calculateSharpeRatio(252);
+    report.informationRatio = calculateInformationRatio(252);
+    report.maxDrawdown = maxDrawdownSinceStart_;
+    report.activeTradingDays = 1; // Simplified
+    report.averageTurnover = 0.1; // 10% average turnover
+
+    return report;
+}
+
+double TradingEngine::calculateSharpeRatio(int lookbackDays) {
+    // Simplified Sharpe ratio calculation
+    // In a real implementation, this would use historical returns
+
+    if (lookbackDays <= 0) return 0.0;
+
+    // Assume 8% annual return, 15% volatility for now
+    double annualReturn = 0.08;
+    double annualVolatility = 0.15;
+    double riskFreeRate = 0.02; // 2% risk-free rate
+
+    // Adjust for current portfolio performance
+    double portfolioPnL = currentPortfolio_.getTotalPnL();
+    double portfolioValue = currentPortfolio_.getTotalValue();
+
+    if (portfolioValue > 0) {
+        double actualReturn = portfolioPnL / portfolioValue;
+        return (actualReturn - riskFreeRate) / annualVolatility;
+    }
+
+    return (annualReturn - riskFreeRate) / annualVolatility;
+}
+
+double TradingEngine::calculateInformationRatio(int lookbackDays) {
+    // Simplified Information Ratio calculation
+    // In a real implementation, this would compare against a benchmark
+
+    if (lookbackDays <= 0) return 0.0;
+
+    // Assume 2% excess return vs benchmark, 5% tracking error
+    double excessReturn = 0.02;
+    double trackingError = 0.05;
+
+    // Adjust for actual performance
+    double portfolioPnL = currentPortfolio_.getTotalPnL();
+    double portfolioValue = currentPortfolio_.getTotalValue();
+
+    if (portfolioValue > 0 && trackingError > 0) {
+        double actualExcess = (portfolioPnL / portfolioValue) - 0.06; // vs 6% benchmark
+        return actualExcess / trackingError;
+    }
+
+    return excessReturn / trackingError;
+}
+
+std::map<std::string, double> TradingEngine::getPositionContributions() {
+    std::map<std::string, double> contributions;
+
+    double totalPnL = currentPortfolio_.getTotalPnL();
+    if (totalPnL == 0.0) return contributions;
+
+    for (const auto& position : currentPositions_) {
+        double positionPnL = position.getQuantity() *
+                           (position.getCurrentPrice() - position.getEntryPrice());
+        contributions[position.getSymbol()] = positionPnL / totalPnL;
+    }
+
+    return contributions;
+}
+
+std::vector<std::string> TradingEngine::getSystemWarnings() {
+    std::vector<std::string> warnings;
+
+    // Check for stale market data
+    auto now = std::chrono::system_clock::now();
+    for (const auto& [symbol, data] : latestMarketData_) {
+        auto age = std::chrono::duration_cast<std::chrono::minutes>(now - data.getTimestamp()).count();
+        if (age > 60) { // Data older than 1 hour
+            warnings.push_back("Stale market data for " + symbol + " (" + std::to_string(age) + " minutes old)");
+        }
+    }
+
+    // Check drawdown
+    if (currentDrawdown_ > params_.portfolioDrawdownStop * 0.8) {
+        warnings.push_back("Approaching maximum drawdown limit (" +
+                          std::to_string(currentDrawdown_ * 100) + "%)");
+    }
+
+    // Check cash buffer
+    double cashRatio = currentPortfolio_.getCashBalance() / currentPortfolio_.getTotalValue();
+    if (cashRatio < params_.cashBufferPercentage * 0.5) {
+        warnings.push_back("Low cash buffer (" + std::to_string(cashRatio * 100) + "%)");
+    }
+
+    // Check position concentration
+    for (const auto& position : currentPositions_) {
+        double weight = calculatePositionWeight(position);
+        if (std::abs(weight) > params_.maxSinglePairAllocation * 1.2) {
+            warnings.push_back("High concentration in " + position.getSymbol() +
+                              " (" + std::to_string(weight * 100) + "%)");
+        }
+    }
+
+    return warnings;
 }
 
 // === RISK MANAGEMENT ===

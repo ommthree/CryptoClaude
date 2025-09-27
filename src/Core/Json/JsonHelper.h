@@ -99,6 +99,7 @@ public:
 class JsonHelper {
 public:
     // Safe JSON parsing
+    static json parse(const std::string& jsonStr);
     static bool parseString(const std::string& jsonStr, json& result);
     static std::string toString(const json& jsonObj, int indent = -1);
 
