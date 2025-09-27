@@ -1169,16 +1169,120 @@ Transform exceptional Week 3 institutional-grade foundation into complete produc
 **Production Readiness Impact:** 99.5%+ → 100% (Complete production readiness)
 **Day 32 Status:** ✅ **AUTOMATED BACKTESTING & STRATEGY OPTIMIZATION COMPLETE**
 
-#### **Day 33 (Saturday): 72-Hour Paper Trading Marathon & Final Validation**
-**Focus:** Extended paper trading with optimized parameters and final production readiness assessment
+#### **Day 33 (Saturday): News Sentiment Validation + Claude-Guided Parameter Optimization**
+**Focus:** CRITICAL news sentiment feature validation + intelligent parameter optimization using Claude API
+**ENHANCED CALIBRATION APPROACH:**
+- **Fixed Components**: Random Forest model + liquidity calibration (keep as validated)
+- **CRITICAL ADDITION**: Real news sentiment data integration and validation (NewsAPI + CryptoNewsAPI)
+- **Smart Optimization**: Claude-guided exploration of high-dimensional parameter space
+- **Comprehensive Parameter Set**: All tunable parameters with auto-tune vs manual control
+- **Monte Carlo + Intelligence**: Use Claude to intelligently guide search for optimal + robust parameters
+
 **Key Deliverables:**
-- 📈 **72-Hour Paper Trading Marathon**: Live trading simulation with optimized Random Forest + parameters
-- 🎯 **Strategy Performance Validation**: Real-time validation of prediction accuracy and profitability
-- 🛡️ **Risk Management Testing**: VaR, stress testing, safety controls under live conditions
+- 📰 **CRITICAL: News Sentiment Feature Validation**: Test Random Forest with real NewsAPI + CryptoNewsAPI data
+- 🎯 **Sentiment Predictive Power Testing**: Validate that news sentiment drives prediction accuracy
+- 🧠 **Claude-Guided Parameter Optimization**: Intelligent search of parameter space using Claude API
+- 📋 **Comprehensive Parameter Framework**: Complete list of tunable parameters (auto-tune vs manual)
+- 🎯 **Smart Monte Carlo**: Claude-guided parameter combinations for optimal performance + robustness
+- 📈 **72-Hour Paper Trading Marathon**: Live trading simulation with news-validated + Claude-optimized parameters
+- 🛡️ **Robustness Validation**: Multi-scenario testing to ensure parameter stability
 - 📊 **Performance Analytics**: Real-time monitoring of all system components under load
 - ✅ **GO/NO-GO Decision**: Final production deployment authorization based on comprehensive results
 
-**Success Criteria:** Successful 72-hour paper trading, >65% prediction accuracy maintained, all systems validated
+**ENHANCED TWO-LAYER RANDOM FOREST ARCHITECTURE (TRS INSIGHT):**
+
+**Layer 1: News Sentiment → Inflow Prediction**
+- **Purpose**: Predict capital inflows/outflows from news sentiment and narrative analysis
+- **Primary Features**: News sentiment, Claude AI analysis, social momentum, regulatory impact
+- **Target Output**: Predicted inflow magnitude and direction ($/hour or % of market cap)
+- **Validation**: Test inflow predictions against actual volume and price impact patterns
+
+**Layer 2: Inflow + Technical + Liquidity → Price Movement Prediction**
+- **Purpose**: Predict price movements using predicted inflow + market structure context
+- **Primary Features**: Predicted inflow (Layer 1) + liquidity metrics + technical indicators
+- **Target Output**: Price movement prediction with enhanced accuracy through causal modeling
+- **Validation**: Test price predictions using inflow-adjusted feature set
+
+**NEWS SENTIMENT FEATURE VALIDATION (CRITICAL REQUIREMENT):**
+
+**Real News Data Integration Requirements:**
+- **NewsAPI Integration**: Pull real general crypto news with sentiment analysis (1,000 articles/day)
+- **CryptoNewsAPI Integration**: Pull crypto-specific news with native sentiment scoring
+- **Historical Sentiment Backfill**: Gather available historical news data for model training
+- **Hourly Sentiment Aggregation**: Aggregate sentiment scores to hourly intervals for model training
+- **Two-Layer Validation**: Test Layer 1 (sentiment→inflow) and Layer 2 (inflow+context→price) separately
+
+**Enhanced Sentiment Features (Building on 5 news features from Day 30 planning):**
+- `general_news_sentiment`: NewsAPI aggregated sentiment score (-1.0 to +1.0)
+- `crypto_news_sentiment`: CryptoNewsAPI sentiment score (-1.0 to +1.0)
+- `news_source_agreement`: Correlation between NewsAPI and CryptoNewsAPI sentiment
+- `crypto_specific_impact`: CryptoNewsAPI impact magnitude (0.0 to 1.0)
+- `news_volume_momentum`: Rate of news article publication (normalized)
+- `sentiment_volatility`: Volatility of sentiment scores over time windows
+- `news_freshness_weight`: Weighting based on news recency
+- `headline_vs_content_sentiment`: Sentiment difference between headlines and full articles
+
+**Sentiment Validation Tests Required:**
+- **Predictive Power Test**: Do sentiment features improve Random Forest accuracy beyond technical indicators alone?
+- **Lead-Lag Analysis**: How far ahead do sentiment signals predict price movements (1h, 4h, 24h)?
+- **Event Response Testing**: Does sentiment correctly capture major crypto events and their price impact?
+- **Cross-Asset Correlation**: Are sentiment signals consistent across different cryptocurrencies?
+- **Noise Filtering**: Can we distinguish meaningful sentiment signals from noise?
+
+**Expected Two-Layer Architecture Results:**
+- **Layer 1 Inflow Prediction Accuracy**: Target >75% accuracy predicting capital flow direction
+- **Layer 2 Price Prediction Accuracy**: Target >80% accuracy with inflow-enhanced feature set
+- **Feature Importance Layer 1**: News sentiment features should dominate inflow prediction
+- **Feature Importance Layer 2**: Predicted inflow should be #1 most important price predictor
+- **Lead-Lag Validation**: Layer 1 provides 2-6 hour lead time, Layer 2 provides execution timing
+- **Causal Chain Validation**: Sentiment→Inflow→Price relationship validated with real data
+
+**COMPREHENSIVE PARAMETER OPTIMIZATION FRAMEWORK:**
+
+**Category 1: Concentration & Risk Parameters (Auto-tune or Manual)**
+- `volatility_factor`: Volatility weighting for concentrations (default: 0.94, range: 0.8-0.99)
+- `max_position_pct`: Maximum position percentage (default: 20%, range: 5%-35%)
+- `concentration_threshold`: How far from target before rebalancing (default: 5%, range: 1%-15%)
+- `correlation_penalty`: Penalty for high correlations (default: 1.5x, range: 1.0x-3.0x)
+- `risk_budget_allocation`: Risk budget per asset (default: equal, range: concentrated-diversified)
+
+**Category 2: Feature Definition & Threshold Parameters (Auto-tune or Manual)**
+- `rsi_overbought_threshold`: RSI overbought level (default: 70, range: 65-80)
+- `rsi_oversold_threshold`: RSI oversold level (default: 30, range: 20-35)
+- `momentum_lookback_period`: Momentum calculation period (default: 7 days, range: 3-21 days)
+- `volatility_calculation_window`: Volatility window (default: 10 days, range: 5-30 days)
+- `volume_spike_threshold`: Volume spike detection (default: 2.0x, range: 1.5x-5.0x)
+- `price_change_significance`: Minimum significant price move (default: 2%, range: 0.5%-5%)
+
+**Category 3: Trading & Execution Parameters (Auto-tune or Manual)**
+- `rebalance_tolerance`: Portfolio drift before rebalancing (default: 3%, range: 1%-10%)
+- `minimum_trade_size`: Minimum trade size USD (default: $100, range: $50-$500)
+- `execution_delay_factor`: Execution timing factor (default: 1.0, range: 0.5-2.0)
+- `slippage_buffer`: Additional slippage buffer (default: 0.05%, range: 0.01%-0.2%)
+- `market_impact_sensitivity`: Sensitivity to market impact (default: 1.0, range: 0.5-2.0)
+
+**Category 4: Signal Processing & Filtering (Auto-tune or Manual)**
+- `signal_smoothing_factor`: Signal noise reduction (default: 0.3, range: 0.1-0.7)
+- `confidence_threshold`: Minimum prediction confidence (default: 0.6, range: 0.5-0.8)
+- `signal_decay_rate`: How fast signals decay (default: 0.1/hour, range: 0.05-0.3/hour)
+- `regime_detection_sensitivity`: Market regime change sensitivity (default: 0.7, range: 0.4-0.9)
+- `outlier_filtering_threshold`: Outlier detection threshold (default: 3.0σ, range: 2.0σ-4.0σ)
+
+**CLAUDE-GUIDED OPTIMIZATION STRATEGY:**
+- **Phase Space Navigation**: Claude analyzes parameter interactions and suggests promising regions
+- **Multi-Objective Optimization**: Claude balances return vs risk vs robustness vs drawdown
+- **Scenario Testing**: Claude designs stress test scenarios for robustness validation
+- **Parameter Interaction Analysis**: Claude identifies non-obvious parameter dependencies
+- **Adaptive Search**: Claude adjusts search strategy based on preliminary results
+- **Robustness Ranking**: Claude evaluates parameter sets for stability across market conditions
+
+**Success Criteria:**
+- **Two-Layer Architecture Validation**: Layer 1 >75% inflow prediction, Layer 2 >80% price prediction accuracy
+- **Causal Chain Validation**: Sentiment→Inflow→Price relationship proven with real data
+- **Feature Importance Validation**: News dominates Layer 1, predicted inflow dominates Layer 2
+- **Lead-Lag Validation**: Layer 1 provides 2-6 hour lead time, Layer 2 provides execution precision
+- **Claude-Optimized Performance**: >25% annual return, <15% max drawdown, >1.5 Sharpe ratio, robust across scenarios
+- **72-Hour Paper Trading**: Successful live simulation with two-layer model + Claude-optimized parameters
 
 ### **Week 7: Live Trading Deployment & Initial Operations (Days 34-40)**
 
